@@ -1,10 +1,14 @@
 #!/usr/bin/ruby
 
+# Author: Tyler Green (greent@tyleragreen.com)
+
 require 'net/http'
 require 'json'
 require 'rgeo/geo_json'
+require 'openssl'
 $stdout.sync = true
-url = "https://transit.land/api/v1/schedule_stop_pairs?per_page=500&date=2016-01-22&bbox=-80.0,35.0,-73.0,41.0&origin_departure_between=09:00:00,09:10:00"
+
+def get_json_data(url, field)
 results = {}
 pairs = []
 begin
@@ -15,38 +19,39 @@ http.use_ssl = true
 http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 request = Net::HTTP::Get.new(uri.request_uri)
 response = http.request(request)
-#puts "RESPONSE #{response.body}"
 results = JSON.parse(response.body)
-#puts "RESULTS #{results["schedule_stop_pairs"]}"
-pairs += results["schedule_stop_pairs"]
+pairs += results[field]
 puts pairs.length
 end while url = results["meta"]["next"]
 
+return pairs
+end
+dir = "output"
+Dir.mkdir(dir) if !File.exist?(dir)
+f = File.open("#{dir}/output.geojson",'w')
+url = "https://transit.land/api/v1/schedule_stop_pairs?per_page=1000&date=2016-01-22&bbox=-80.0,35.0,-73.0,41.0&origin_departure_between=09:00:00,09:10:00"
+
+pairs = get_json_data(url, "schedule_stop_pairs")
+puts "PAIRS COUNT #{pairs.length}"
+stops_url = "https://transit.land/api/v1/stops?per_page=1000&bbox=-80.0,35.0,-73.0,41.0"
+stops = get_json_data(stops_url, "stops")
+puts "STOPS COUNT #{stops.length}"
+puts "STOPS 1 #{stops[0]["geometry"]["coordinates"]}"
 edges = {}
-stops = {}
 edges.default = 0
-results["schedule_stop_pairs"].each do |edge|
+pairs.each do |edge|
   key = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
   edges[key] += 1
 end
-stops_url = "http://transit.land/api/v1/stops?per_page=20&bbox=-121.0,35.0,-73.0,41.0"
-uri = URI(stops_url)
-response = Net::HTTP.get(uri)
-results = JSON.parse(response)
-results["stops"].each do |stop|
-  stops[stop['onestop_id']] = stop
-end
-stops.each do |key,value|
-  puts "KEY #{key} GEO #{value['geometry']}"
-end
-
-f = File.open("output.geojson",'w')
 
 features = []
 edges.each do |key,value|
   origin_id, destination_id = key.split(",")
   puts origin_id
-  features << RGeo::GeoJSON.decode('{ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [1,1] } }', json_parser: :json)
+  origin = stops.select { |stop| stop["onestop_id"] == origin_id }[0]
+  destination = stops.select { |stop| stop["onestop_id"] == destination_id }[0]
+  puts "ORIGIN #{origin}"
+  features << RGeo::GeoJSON.decode("{ \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", \"coordinates\": [#{origin["geometry"]["coordinates"]},#{destination["geometry"]["coordinates"]}] } }", json_parser: :json)
 end
 features = RGeo::GeoJSON::FeatureCollection.new(features)
 hash = RGeo::GeoJSON.encode(features)
