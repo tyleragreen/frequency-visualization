@@ -1,11 +1,3 @@
 # NYC Frequency Visualization
 
-Tyler A. Green
-greent@tyleragreen.com
-
-
-To Run
-
-bundle install
-
-ruby frequency.rb
+For infomation, please contact Tyler A. Green at [greent@tyleragreen.com](mailto:greent@tyleragreen.com).
