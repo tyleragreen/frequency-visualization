@@ -14,6 +14,12 @@ DEFAULT_TIME_FRAME = "09:00:00,09:10:00"
 
 NYC_BOX = [ -80.0, 35.0,
             -73.0, 41.0 ]
+COLOR_MAP = { 0  => '#fef0d9',
+              3  => '#fdcc8a',
+	      6  => '#fc8d59',
+	      10 => '#d7301f' 
+	    }
+STROKE_OPACITY = 1.0
 
 class TransitlandAPIReader
 
@@ -89,13 +95,14 @@ pairs = reader.get_schedule_stop_pairs
 edges         = {}
 edges.default = 0
 pairs.each do |edge|
-  key = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
+  key         = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
   edges[key] += 1
 end
 
 features = []
-edges.each do |key,value|
-  origin_id, destination_id = key.split(",")
+file.puts '{"type":"FeatureCollection","features":['
+edges.each do |edge_key,edge_value|
+  origin_id, destination_id = edge_key.split(",")
 
   origin      = reader.get_stop(origin_id)
   destination = reader.get_stop(destination_id)
@@ -103,15 +110,28 @@ edges.each do |key,value|
   origin_coordinates      = origin["geometry"]["coordinates"].join(',')
   destination_coordinates = destination["geometry"]["coordinates"].join(',')
 
+  frequency  = edge_value / (1.to_f/6.to_f)
+  freq_class = COLOR_MAP.keys.find { |x| frequency >= x }
   feature_str = '{ "type"    : "Feature",
+		   "properties": { "origin_onestop_id"      : "' + origin_id + '",
+		                   "destination_onestop_id" : "' + destination_id + '",
+				   "trips"                  : ' + edge_value.to_s + ',
+				   "frequency"              : ' + frequency.to_s + ',
+				   "stroke"                 : "' + COLOR_MAP[freq_class] + '",
+				   "stroke-width"           : ' + freq_class.to_s + ',
+				   "stroke-opacity"         : ' + STROKE_OPACITY.to_s + ' },
                    "geometry": { "type"       : "LineString",
 	                         "coordinates": [ [' + origin_coordinates + '],
-				                  [' + destination_coordinates + '] ] } }'
-  features << RGeo::GeoJSON.decode(feature_str, json_parser: :json)
+				                  [' + destination_coordinates + '] ] }
+	         },'
+  file.puts feature_str
+  feature = RGeo::GeoJSON.decode(feature_str, json_parser: :json)
+  puts "f: #{feature}"
+  features << feature
 end
-
+file.puts "]}"
 features = RGeo::GeoJSON::FeatureCollection.new(features)
 hash     = RGeo::GeoJSON.encode(features)
 
-file.puts hash.to_json
+#file.puts hash.to_json
 file.close
