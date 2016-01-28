@@ -36,7 +36,7 @@ class TransitlandAPIReader
     results = {}
     data    = []
 
-#    begin
+    begin
       puts "URL #{url}"
       uri              = URI.parse(url)
       http             = Net::HTTP.new(uri.host, uri.port)
@@ -49,7 +49,7 @@ class TransitlandAPIReader
       data    += results[field]
       puts data.length
 
-#    end while url = results["meta"]["next"]
+    end while url = results["meta"]["next"]
     
     return data
   end
@@ -85,30 +85,22 @@ class TransitlandAPIReader
 end
 
 reader = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
+output_dir  = "output"
 
-dir  = "output"
-Dir.mkdir(dir) if !File.exist?(dir)
-file = File.open("#{dir}/output.geojson",'w')
-=begin
-pairs = reader.get_schedule_stop_pairs
+edges          = {}
+edges.default  = 0
+features       = []
+geo_factory    = RGeo::Cartesian.simple_factory(srid: 4326)
+entity_factory = RGeo::GeoJSON::EntityFactory.instance
 
-edges         = {}
-edges.default = 0
-pairs.each do |edge|
+reader.get_schedule_stop_pairs.each do |edge|
   key         = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
   edges[key] += 1
 end
-=end
-features = []
-#file.puts '{"type":"FeatureCollection","features":['
-@geo_factory = RGeo::Cartesian.simple_factory(srid: 4326)
-@entity_factory = RGeo::GeoJSON::EntityFactory.instance
-#edges.each do |edge_key,edge_value|
-puts "getting"
-reader.get_stops.each do |key,val|
-puts "STOP #{key}"
-#  origin_id, destination_id = edge_key.split(",")
-=begin
+
+edges.each do |edge_key,edge_value|
+  origin_id, destination_id = edge_key.split(",")
+
   origin      = reader.get_stop(origin_id)
   destination = reader.get_stop(destination_id)
 
@@ -117,31 +109,22 @@ puts "STOP #{key}"
 
   frequency  = edge_value / (1.to_f/6.to_f)
   freq_class = COLOR_MAP.keys.find { |x| frequency >= x }
-=begin
-  feature_str = '{ "type"    : "Feature",
-		   "properties": { "origin_onestop_id"      : "' + origin_id + '",
-		                   "destination_onestop_id" : "' + destination_id + '",
-				   "trips"                  : ' + edge_value.to_s + ',
-				   "frequency"              : ' + frequency.to_s + ',
-				   "stroke"                 : "' + COLOR_MAP[freq_class] + '",
-				   "stroke-width"           : ' + freq_class.to_s + ',
-				   "stroke-opacity"         : ' + STROKE_OPACITY.to_s + ' },
-                   "geometry": { "type"       : "LineString",
-	                         "coordinates": [ [' + origin_coordinates + '],
-				                  [' + destination_coordinates + '] ] }
-	         },'
-=end
-#  file.puts feature_str
-#  feature = RGeo::GeoJSON.decode(feature_str, json_parser: :json)
-  object = @entity_factory.feature(@geo_factory.point(10,20),nil,:prop1 => "foo", :prop2 => "bar")
-#  feature = RGeo::GeoJSON.encode(object)
-#  puts "f: #{feature}"
-  features << object#feature
+  properties = { :origin_onestop_id      => origin_id,
+                 :destination_onestop_id => destination_id,
+                 :trips                  => edge_value,
+                 :frequency              => frequency,
+                 :stroke                 => COLOR_MAP[freq_class],
+                 "stroke-width"          => freq_class,
+                 "stroke-opacity"        => STROKE_OPACITY }
+
+  object = entity_factory.feature(geo_factory.point(10,20),nil,properties)
+  features << object
 end
-#file.puts "]}"
-#features = RGeo::GeoJSON::FeatureCollection.new(features)
-collection = @entity_factory.feature_collection(features)
-hash     = RGeo::GeoJSON.encode(collection)
-puts "HASH #{hash}"
+
+collection = entity_factory.feature_collection(features)
+hash       = RGeo::GeoJSON.encode(collection)
+
+Dir.mkdir(output_dir) if !File.exist?(output_dir)
+file = File.open("#{output_dir}/output.geojson",'w')
 file.puts hash.to_json
 file.close
