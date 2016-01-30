@@ -9,6 +9,7 @@ require 'openssl'
 
 $stdout.sync = true
 
+OUTPUT_DIR         = "output"
 DEFAULT_DATE       = "2016-01-22"
 DEFAULT_TIME_FRAME = "09:00:00,09:10:00"
 
@@ -85,8 +86,6 @@ class TransitlandAPIReader
 end
 
 reader = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
-output_dir  = "output"
-
 edges          = {}
 edges.default  = 0
 features       = []
@@ -104,27 +103,30 @@ edges.each do |edge_key,edge_value|
   origin      = reader.get_stop(origin_id)
   destination = reader.get_stop(destination_id)
 
-  origin_coordinates      = origin["geometry"]["coordinates"].join(',')
-  destination_coordinates = destination["geometry"]["coordinates"].join(',')
+  origin_coordinates      = origin["geometry"]["coordinates"]
+  destination_coordinates = destination["geometry"]["coordinates"]
 
   frequency  = edge_value / (1.to_f/6.to_f)
   freq_class = COLOR_MAP.keys.find { |x| frequency >= x }
   properties = { :origin_onestop_id      => origin_id,
                  :destination_onestop_id => destination_id,
-                 :trips                  => edge_value,
-                 :frequency              => frequency,
-                 :stroke                 => COLOR_MAP[freq_class],
-                 "stroke-width"          => freq_class,
-                 "stroke-opacity"        => STROKE_OPACITY }
+                 "stroke-width"          => edge_value,
+                 "line-width"            => edge_value,
+                 :trips                  => edge_value }#,
+#                 :frequency              => frequency,
+#                 :stroke                 => COLOR_MAP[freq_class],
+#                 "stroke-opacity"        => STROKE_OPACITY }
+  origin_point      = geo_factory.point(origin_coordinates[0],origin_coordinates[1])
+  destination_point = geo_factory.point(destination_coordinates[0],destination_coordinates[1])
+  line              = geo_factory.line_string([origin_point,destination_point])
 
-  object = entity_factory.feature(geo_factory.point(10,20),nil,properties)
-  features << object
+  features << entity_factory.feature(line,nil,properties)
 end
 
 collection = entity_factory.feature_collection(features)
 hash       = RGeo::GeoJSON.encode(collection)
 
-Dir.mkdir(output_dir) if !File.exist?(output_dir)
-file = File.open("#{output_dir}/output.geojson",'w')
+Dir.mkdir(OUTPUT_DIR) if !File.exist?(OUTPUT_DIR)
+file = File.open("#{OUTPUT_DIR}/output.geojson",'w')
 file.puts hash.to_json
 file.close
