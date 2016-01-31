@@ -1,20 +1,20 @@
 #!/usr/bin/ruby
-
+#----------------------------------------------------
+#
 # Author: Tyler Green (greent@tyleragreen.com)
-
+#
+#----------------------------------------------------
 require 'net/http'
 require 'json'
 require 'rgeo/geo_json'
 require 'openssl'
 require 'date'
 
-# Set type to :bus, :subway, or :both to control filtering
-type = :both 
-
 $stdout.sync = true
 
+#----------------------------------------------------
 # Constants
-
+#----------------------------------------------------
 OUTPUT_DIR             = "output"
 START_TIME             = Time.new(2016,01,22,7,30,00)
 END_TIME               = Time.new(2016,01,22,8,00,00)
@@ -25,19 +25,25 @@ SUBWAY_ONESTOP_ID      = "f-dr5r-nyctsubway"
 NYC_BOX                = [ -80.0, 35.0,
                            -73.0, 41.0 ]
 
+#----------------------------------------------------
 # Class to handle reads of the Transitland API
-
+#----------------------------------------------------
 class TransitlandAPIReader
 
   HOSTNAME           = "https://transit.land/api/v1/"
   PER_PAGE           = 1000
 
+  #----------------------------------------------------
+  # Set up instance variables of a TransitlandAPIReader object
   def initialize(bounding_box, date, time_frame)
     @bounding_box = bounding_box
     @date         = date
     @time_frame   = time_frame
   end
 
+  #----------------------------------------------------
+  # Fetch JSON data from a given URL, save attributes with
+  # a given field name, and handle pagination (Transitland-specific)
   def get_json_data(url, field)
     results = {}
     data    = []
@@ -60,12 +66,16 @@ class TransitlandAPIReader
     return data
   end
 
+  #----------------------------------------------------
+  # Fetch the schedule_stop_pair list for the given time and bounding box
   def get_schedule_stop_pairs
     pairs_url  = "#{HOSTNAME}schedule_stop_pairs?"
     pairs_url += "per_page=#{PER_PAGE}&bbox=#{@bounding_box.join(',')}&date=#{@date}&origin_departure_between=#{@time_frame}"
     return get_json_data(pairs_url, "schedule_stop_pairs")
   end
 
+  #----------------------------------------------------
+  # Fetch the stops in the given bounding box
   def get_stops
     stops_url  = "#{HOSTNAME}stops?per_page=#{PER_PAGE}&bbox=#{@bounding_box.join(',')}"
     stop_array = get_json_data(stops_url, "stops")
@@ -78,9 +88,13 @@ class TransitlandAPIReader
     return stop_hash
   end
 
+
+  #----------------------------------------------------
+  # Lookup a single stop by its onestop_id
   def get_stop(onestop_id)
 
     # Lookup the stops the first time this is called
+    # and save them for subsequent calls
     unless @stops
       @stops = get_stops
     end
@@ -90,12 +104,16 @@ class TransitlandAPIReader
 
 end
 
-reader         = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
-edges          = {}
-edges.default  = 0
-features       = []
-geo_factory    = RGeo::Cartesian.simple_factory(srid: 4326)
-entity_factory = RGeo::GeoJSON::EntityFactory.instance
+#----------------------------------------------------
+# Main script flow
+#----------------------------------------------------
+reader           = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
+edges            = {}
+edges.default    = 0
+features         = {}
+features.default = []
+geo_factory      = RGeo::Cartesian.simple_factory(srid: 4326)
+entity_factory   = RGeo::GeoJSON::EntityFactory.instance
 
 # Iterate through the stop pairs (transit route between two stops that departed in the specified time frame)
 # and count the number of times each edge occurs to begin to tabulate frequency
@@ -114,13 +132,6 @@ edges.each do |edge_key,edge_value|
   origin      = reader.get_stop(origin_id)
   destination = reader.get_stop(destination_id)
 
-  # Filter the edges based on the transit type requested
-  if type == :subway
-    next unless origin["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID) && destination["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID)
-  elsif type == :bus
-    next if origin["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID) && destination["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID)
-  end
-
   origin_coordinates      = origin["geometry"]["coordinates"]
   destination_coordinates = destination["geometry"]["coordinates"]
 
@@ -135,15 +146,25 @@ edges.each do |edge_key,edge_value|
   destination_point = geo_factory.point(destination_coordinates[0],destination_coordinates[1])
   line              = geo_factory.line_string([origin_point,destination_point])
 
-  features << entity_factory.feature(line,nil,properties)
+  if origin["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID) && destination["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID)
+    features[:subway] << entity_factory.feature(line,nil,properties)
+  else
+    features[:bus] << entity_factory.feature(line,nil,properties)
+  end
+  features[:both] << entity_factory.feature(line,nil,properties)
 end
 
-# Convert the list of features into a GeoJSON collection
-collection = entity_factory.feature_collection(features)
-hash       = RGeo::GeoJSON.encode(collection)
-
-# Output the GeoJSON results
 Dir.mkdir(OUTPUT_DIR) if !File.exist?(OUTPUT_DIR)
-file = File.open("#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.split(',').join('_')}_#{type}.geojson",'w')
-file.puts hash.to_json
-file.close
+
+features.each do |key, features|
+
+  # Convert the list of features into a GeoJSON collection
+  collection = entity_factory.feature_collection(features)
+  hash       = RGeo::GeoJSON.encode(collection)
+  
+  # Output the GeoJSON results
+  file = File.open("#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.split(',').join('_')}_#{key.to_s}.geojson",'w')
+  file.puts hash.to_json
+  file.close
+
+end
