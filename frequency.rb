@@ -16,7 +16,7 @@ $stdout.sync = true
 # Constants
 #----------------------------------------------------
 OUTPUT_DIR             = "output"
-START_TIME             = Time.new(2016,01,22,7,58,00)
+START_TIME             = Time.new(2016,01,22,7,30,00)
 END_TIME               = Time.new(2016,01,22,8,00,00)
 WINDOW_LENGTH_IN_HOURS = (END_TIME - START_TIME) / 3600
 DEFAULT_DATE           = START_TIME.strftime("%Y-%m-%d")
