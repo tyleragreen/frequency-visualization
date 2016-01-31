@@ -16,7 +16,7 @@ $stdout.sync = true
 # Constants
 #----------------------------------------------------
 OUTPUT_DIR             = "output"
-START_TIME             = Time.new(2016,01,22,7,30,00)
+START_TIME             = Time.new(2016,01,22,7,58,00)
 END_TIME               = Time.new(2016,01,22,8,00,00)
 WINDOW_LENGTH_IN_HOURS = (END_TIME - START_TIME) / 3600
 DEFAULT_DATE           = START_TIME.strftime("%Y-%m-%d")
@@ -110,8 +110,7 @@ end
 reader           = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
 edges            = {}
 edges.default    = 0
-features         = {}
-features.default = []
+features         = { :bus => [], :subway => [], :both => [] }
 geo_factory      = RGeo::Cartesian.simple_factory(srid: 4326)
 entity_factory   = RGeo::GeoJSON::EntityFactory.instance
 
@@ -156,10 +155,10 @@ end
 
 Dir.mkdir(OUTPUT_DIR) if !File.exist?(OUTPUT_DIR)
 
-features.each do |key, features|
+features.each do |key, feature_array|
 
   # Convert the list of features into a GeoJSON collection
-  collection = entity_factory.feature_collection(features)
+  collection = entity_factory.feature_collection(feature_array)
   hash       = RGeo::GeoJSON.encode(collection)
   
   # Output the GeoJSON results
