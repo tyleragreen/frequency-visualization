@@ -135,10 +135,26 @@ edges.each do |edge_key,edge_value|
   destination_coordinates = destination["geometry"]["coordinates"]
 
   frequency  = edge_value / WINDOW_LENGTH_IN_HOURS
+  if frequency >= 10
+    width = 3.5
+    color = '#d7301f'
+  elsif frequency >= 6
+    width = 3
+    color = '#fc8d59'
+  elsif frequency >= 3
+    width = 2.5
+    color = '#fdcc8a'
+  elsif frequency >= 0
+    width = 2
+    color = '#fef0d9'
+  end
   properties = { "origin_onestop_id"      => origin_id,
                  "destination_onestop_id" => destination_id,
 		 "frequency"              => frequency,
-                 "trips"                  => edge_value }
+                 "trips"                  => edge_value,
+		 "stroke-width"           => width,
+		 "stroke"                 => color
+	       }
 
   # Create a GeoJSON line between the two stops
   origin_point      = geo_factory.point(origin_coordinates[0],origin_coordinates[1])
