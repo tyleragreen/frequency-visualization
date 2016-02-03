@@ -178,7 +178,7 @@ features.each do |key, feature_array|
   hash       = RGeo::GeoJSON.encode(collection)
   
   # Output the GeoJSON results
-  file = File.open("#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.split(',').join('_')}_#{key.to_s}.geojson",'w')
+  file = File.open("#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.gsub(':','-').split(',').join('_')}_#{key.to_s}.geojson",'w')
   file.puts hash.to_json
   file.close
 
