@@ -15,35 +15,74 @@ $stdout.sync = true
 # Constants
 #----------------------------------------------------
 OUTPUT_DIR             = "output"
-START_TIME             = Time.new(2016,01,22,7,30,00)
+START_TIME             = Time.new(2016,01,22,7,55,00)
 END_TIME               = Time.new(2016,01,22,8,00,00)
-WINDOW_LENGTH_IN_HOURS = (END_TIME - START_TIME) / 3600
-DEFAULT_DATE           = START_TIME.strftime("%Y-%m-%d")
-DEFAULT_TIME_FRAME     = "#{START_TIME.strftime("%H:%M:%S")},#{END_TIME.strftime("%H:%M:%S")}"
 SUBWAY_ONESTOP_ID      = "f-dr5r-nyctsubway"
-NYC_BOX                = [ -80.0, 35.0,
+NYC_COORDINATES        = [ -80.0, 35.0,
                            -73.0, 41.0 ]
+
+class TimeFrame
+  def initialize(start_time, end_time)
+    @start_time = start_time
+    @end_time   = end_time
+  end
+
+  def get_date
+    return @start_time.strftime("%Y-%m-%d")
+  end
+
+  def get_window_length
+    return (@end_time - @start_time) / 3600
+  end
+
+  def get_api_format
+    return "#{@start_time.strftime("%H:%M:%S")},#{@end_time.strftime("%H:%M:%S")}"
+  end
+
+  def get_filename_format
+    return get_api_format.gsub(':','-').split(',').join('_')
+  end
+end
+
+class BoundingBox
+  def initialize(coordinates)
+    @coordinates = coordinates
+  end
+
+  def get_api_format
+    return @coordinates.join(',')
+  end
+
+  def get_filename_format
+    return @coordinates.join('_').gsub('.','o')
+  end
+end
 
 #----------------------------------------------------
 # Class to handle reads of the Transitland API
 #----------------------------------------------------
 class TransitlandAPIReader
 
-  HOSTNAME           = "https://transit.land/api/v1/"
-  PER_PAGE           = 1000
+  HOSTNAME      = "https://transit.land/api/v1/"
+  CACHE_DIR     = "cache"
+  PER_PAGE      = 1000
+  EXTENSION     = "json"
+  FILENAME_ARGS = [ :bounding_box,
+                    :date,
+		    :time_frame ]
 
   #----------------------------------------------------
   # Set up instance variables of a TransitlandAPIReader object
-  def initialize(bounding_box, date, time_frame)
+  def initialize(bounding_box, time_frame)
     @bounding_box = bounding_box
-    @date         = date
     @time_frame   = time_frame
+    @date         = @time_frame.get_date
   end
 
   #----------------------------------------------------
   # Fetch JSON data from a given URL, save attributes with
   # a given field name, and handle pagination (Transitland-specific)
-  def get_json_data(url, field)
+  def get_json_data_from_api(url, field)
     results = {}
     data    = []
 
@@ -65,28 +104,85 @@ class TransitlandAPIReader
     return data
   end
 
+  def get_json_data(filename, url, endpoint)
+    if File.exist?(filename)
+      file_contents = File.readlines(filename)[0]
+      json_data     = JSON.parse(file_contents)
+    else
+      json_data = get_json_data_from_api(url, endpoint)
+
+      # Create the cache directory if it does not exist
+      Dir.mkdir(CACHE_DIR) if CACHE_DIR && !File.exist?(CACHE_DIR)
+      File.open(filename, 'w') do |f|
+        f.write JSON.generate(json_data)
+      end
+    end
+    
+    return json_data
+  end
+
+  def get_cache_filename(endpoint, args)
+
+    filename = "#{CACHE_DIR}/#{endpoint}"
+
+    FILENAME_ARGS.each do |arg|
+      filename += "_#{args[arg]}" if args[arg]
+    end
+
+    filename += ".#{EXTENSION}"
+
+    return filename
+  end
+
   #----------------------------------------------------
   # Fetch the schedule_stop_pair list for the given time and bounding box
   def get_schedule_stop_pairs
-    pairs_url  = "#{HOSTNAME}schedule_stop_pairs?"
-    pairs_url += "per_page=#{PER_PAGE}&bbox=#{@bounding_box.join(',')}&date=#{@date}&origin_departure_between=#{@time_frame}"
-    return get_json_data(pairs_url, "schedule_stop_pairs")
+    endpoint = "schedule_stop_pairs"
+
+    url  = "#{HOSTNAME}#{endpoint}?"
+    url += "per_page=#{PER_PAGE}&bbox=#{@bounding_box.get_api_format}&date=#{@date}&origin_departure_between=#{@time_frame.get_api_format}"
+
+    filename  = get_cache_filename(endpoint, bounding_box: @bounding_box.get_filename_format,
+                                             date:         @date,
+                                             time_frame:   @time_frame.get_filename_format)
+
+    return get_json_data(filename, url, endpoint)
+  end
+
+  #----------------------------------------------------
+  # Iterate through the stop pairs (transit route between two stops that departed in the specified time frame)
+  # and count the number of times each edge occurs to begin to tabulate frequency
+  def get_edges
+    edges            = {}
+    edges.default    = 0
+
+    get_schedule_stop_pairs.each do |edge|
+      if edge['origin_onestop_id'] != edge['destination_onestop_id']
+        key         = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
+        edges[key] += 1
+      end
+    end
+
+    return edges
   end
 
   #----------------------------------------------------
   # Fetch the stops in the given bounding box
   def get_stops
-    stops_url  = "#{HOSTNAME}stops?per_page=#{PER_PAGE}&bbox=#{@bounding_box.join(',')}"
-    stop_array = get_json_data(stops_url, "stops")
+    endpoint = "stops"
+
+    url       = "#{HOSTNAME}#{endpoint}?per_page=#{PER_PAGE}&bbox=#{@bounding_box.get_api_format}"
+    filename  = get_cache_filename(endpoint, bounding_box: @bounding_box.get_filename_format)
+
+    json_data = get_json_data(filename, url, endpoint)
 
     stop_hash = {}
-    stop_array.each do |stop|
+    json_data.each do |stop|
       stop_hash[stop["onestop_id"]] = stop
     end
 
     return stop_hash
   end
-
 
   #----------------------------------------------------
   # Lookup a single stop by its onestop_id
@@ -106,23 +202,14 @@ end
 #----------------------------------------------------
 # Main script flow
 #----------------------------------------------------
-reader           = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_FRAME)
-edges            = {}
-edges.default    = 0
+time_frame       = TimeFrame.new(START_TIME, END_TIME)
+box              = BoundingBox.new(NYC_COORDINATES)
+reader           = TransitlandAPIReader.new(box, time_frame)
 features         = { :bus => [], :subway => [], :both => [] }
-
-# Iterate through the stop pairs (transit route between two stops that departed in the specified time frame)
-# and count the number of times each edge occurs to begin to tabulate frequency
-reader.get_schedule_stop_pairs.each do |edge|
-  if edge['origin_onestop_id'] != edge['destination_onestop_id']
-    key         = "#{edge['origin_onestop_id']},#{edge['destination_onestop_id']}"
-    edges[key] += 1
-  end
-end
 
 # Now that we know the number of occurrences of each edge,
 # pass through them again to create their properties for an eventual GeoJSON output
-edges.each do |edge_key,edge_value|
+reader.get_edges.each do |edge_key,edge_value|
   origin_id, destination_id = edge_key.split(",")
 
   origin      = reader.get_stop(origin_id)
@@ -132,7 +219,7 @@ edges.each do |edge_key,edge_value|
   destination_coordinates = destination["geometry"]["coordinates"]
   coordinates             = [ origin_coordinates, destination_coordinates ]
 
-  frequency  = edge_value / WINDOW_LENGTH_IN_HOURS
+  frequency  = edge_value / time_frame.get_window_length
   width      = 2.5
   if frequency > 12
     color = '#d7301f'
@@ -172,7 +259,7 @@ Dir.mkdir(OUTPUT_DIR) if OUTPUT_DIR && !File.exist?(OUTPUT_DIR)
 features.each do |key, feature_array|
 
   # Output the GeoJSON results to a file
-  filename = "#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.gsub(':','-').split(',').join('_')}_#{key.to_s}.geojson"
+  filename = "#{OUTPUT_DIR}/output_#{time_frame.get_date}_#{time_frame.get_filename_format}_#{key.to_s}.geojson"
 
   File.open(filename, 'w') do |f|
     f.write JSON.generate({type: 'FeatureCollection', features: feature_array })
