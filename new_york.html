@@ -24,7 +24,6 @@
         top: 0;
         bottom: 0;
         width: 100%;
-        background: rgba(255, 255, 255, 1);
         background-image: url('IMG_2903(3).jpg');
         background-size: cover;
         transition: background 1s ease-out;
@@ -52,51 +51,52 @@
         text-shadow: 0 4px 4px rgba(0,0,0,0.8);
     }
     .menu-ui {
-      background:#fff;
-      position:absolute;
-      top:10px;right:10px;
+      background: #fff;
+      position: absolute;
+      top: 15px;
+      right: 15px;
       z-index:1;
-      border-radius:3px;
-      width:120px;
-      border:1px solid rgba(0,0,0,0.4);
+      border-radius: 3px;
+      width: 160px;
+      border: 1px solid rgba(0,0,0,0.4);
       }
       .menu-ui a {
-        font-size:13px;
-        color:#404040;
-        display:block;
-        margin:0;padding:0;
-        padding:10px;
-        text-decoration:none;
-        border-bottom:1px solid rgba(0,0,0,0.25);
-        text-align:center;
+        font-size: 16px;
+        color: #404040;
+        display: block;
+        margin: 0;
+        padding: 13px;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(0,0,0,0.25);
+        text-align: center;
         }
         .menu-ui a:first-child {
-          border-radius:3px 3px 0 0;
+          border-radius: 3px 3px 0 0;
           }
         .menu-ui a:last-child {
-          border:none;
-          border-radius:0 0 3px 3px;
+          border: none;
+          border-radius: 0 0 3px 3px;
           }
         .menu-ui a:hover {
-          background:#f8f8f8;
-          color:#404040;
+          background: #f8f8f8;
+          color: #404040;
           }
         .menu-ui a.active {
-          background:#3887BE;
-          color:#FFF;
+          background: #3887BE;
+          color: #FFF;
           }
           .menu-ui a.active:hover {
-            background:#3074a4;
+            background: #3074a4;
             }
   </style>
 </head>
 <body>
 <div id='map-one' class='map'></div>
 <nav id='menu-ui' class='menu-ui'></nav>
-<div id='loader' style="display:none;"><div class='message'><h1>Loading...</h1></div></div>
+<div id='loader'><div class='message'><h1>Loading...</h1></div></div>
 <script>
-var latitude   = 40.750407;
-var longitude  = -73.993525;
+var latitude   = 40.72;
+var longitude  = -74.0;
 var zoom_level = 11;
 
 var loader = document.getElementById('loader');
@@ -112,7 +112,10 @@ var map = L.mapbox.map('map-one', 'mapbox.streets')
 //featureLayer.loadURL('output_2016-01-22_07-30-00_08-00-00_bus.geojson')
 //  .on('ready', finishedLoading);
 
-addLayer(L.mapbox.featureLayer(), 'Subway', 1);
+addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'output_2016-01-22_07-30-00_08-00-00_bus.geojson');
+addLayer(L.mapbox.featureLayer(),false,'Subway - Friday',2,'output_2016-01-22_07-30-00_08-00-00_subway.geojson');
+addLayer(L.mapbox.featureLayer(),false,'Bus - Saturday',3,'output_2016-01-23_07-30-00_08-00-00_bus.geojson');
+addLayer(L.mapbox.featureLayer(),false,'Subway - Saturday',4,'output_2016-01-23_07-30-00_08-00-00_subway.geojson');
 
 function startLoading() {
   loader.className = '';
@@ -122,15 +125,27 @@ function finishedLoading() {
   loader.className = 'hide';
 }
 
-function addLayer(layer, name, zIndex) {
+function addLayer(layer, active, name, zIndex, url) {
   layer.setZIndex(zIndex)
-    .loadURL('output_2016-01-22_07-30-00_08-00-00_bus.geojson')
     .addTo(map);
 
   var link = document.createElement('a');
-  link.href = '#';
+  link.href      = '#';
   link.className = 'active';
   link.innerHTML = name;
+
+  if (active) {
+    startLoading();
+    layer.loadURL(url)
+      .on('ready', finishedLoading);
+    map.addLayer(layer);
+    link.className = 'active';
+  } else {
+    layer.loadURL(url);
+    map.removeLayer(layer);
+    link.className = '';
+  }
+
 
   link.onclick = function(e) {
     e.preventDefault();
@@ -140,10 +155,16 @@ function addLayer(layer, name, zIndex) {
       map.removeLayer(layer);
       this.className = '';
     } else {
-      map.addLayer(layer);
+      map.addLayer(layer)
       this.className = 'active';
     }
   };
+  layer.on('mouseover', function(e) {
+    e.layer.openPopup();
+  });
+  layer.on('mouseout', function(e) {
+    e.layer.closePopup();
+  });
 
   layers.appendChild(link);
 }
