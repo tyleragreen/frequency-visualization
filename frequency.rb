@@ -6,7 +6,6 @@
 #----------------------------------------------------
 require 'net/http'
 require 'json'
-require 'rgeo/geo_json'
 require 'openssl'
 require 'date'
 
@@ -111,8 +110,6 @@ reader           = TransitlandAPIReader.new(NYC_BOX, DEFAULT_DATE, DEFAULT_TIME_
 edges            = {}
 edges.default    = 0
 features         = { :bus => [], :subway => [], :both => [] }
-geo_factory      = RGeo::Cartesian.simple_factory(srid: 4326)
-entity_factory   = RGeo::GeoJSON::EntityFactory.instance
 
 # Iterate through the stop pairs (transit route between two stops that departed in the specified time frame)
 # and count the number of times each edge occurs to begin to tabulate frequency
@@ -133,21 +130,18 @@ edges.each do |edge_key,edge_value|
 
   origin_coordinates      = origin["geometry"]["coordinates"]
   destination_coordinates = destination["geometry"]["coordinates"]
+  coordinates             = [ origin_coordinates, destination_coordinates ]
 
   frequency  = edge_value / WINDOW_LENGTH_IN_HOURS
-  if frequency >= 10
-    width = 3.5
+  width      = 2.5
+  if frequency > 12
     color = '#d7301f'
-  elsif frequency >= 6
-    width = 3
+  elsif frequency > 8
     color = '#fc8d59'
-  elsif frequency >= 3
-    width = 2.5
+  elsif frequency > 0
     color = '#fdcc8a'
-  elsif frequency >= 0
-    width = 2
-    color = '#fef0d9'
   end
+
   properties = { "origin_onestop_id"      => origin_id,
                  "destination_onestop_id" => destination_id,
 		 "frequency"              => frequency,
@@ -155,31 +149,33 @@ edges.each do |edge_key,edge_value|
 		 "stroke-width"           => width,
 		 "stroke"                 => color
 	       }
-
-  # Create a GeoJSON line between the two stops
-  origin_point      = geo_factory.point(origin_coordinates[0],origin_coordinates[1])
-  destination_point = geo_factory.point(destination_coordinates[0],destination_coordinates[1])
-  line              = geo_factory.line_string([origin_point,destination_point])
+  feature = { type: 'Feature',
+              properties: properties,
+	      geometry: {
+	        type: 'LineString',
+		coordinates: coordinates
+	      }
+	    }
 
   if origin["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID) && destination["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID)
-    features[:subway] << entity_factory.feature(line,nil,properties)
+    features[:subway] << feature
   else
-    features[:bus] << entity_factory.feature(line,nil,properties)
+    features[:bus] << feature
   end
-  features[:both] << entity_factory.feature(line,nil,properties)
+  features[:both] << feature
 end
 
-Dir.mkdir(OUTPUT_DIR) if !File.exist?(OUTPUT_DIR)
+# Create the output directory if it does not exist
+Dir.mkdir(OUTPUT_DIR) if OUTPUT_DIR && !File.exist?(OUTPUT_DIR)
 
+# Iterate through the types of feature sets
 features.each do |key, feature_array|
 
-  # Convert the list of features into a GeoJSON collection
-  collection = entity_factory.feature_collection(feature_array)
-  hash       = RGeo::GeoJSON.encode(collection)
-  
-  # Output the GeoJSON results
-  file = File.open("#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.gsub(':','-').split(',').join('_')}_#{key.to_s}.geojson",'w')
-  file.puts hash.to_json
-  file.close
+  # Output the GeoJSON results to a file
+  filename = "#{OUTPUT_DIR}/output_#{DEFAULT_DATE}_#{DEFAULT_TIME_FRAME.gsub(':','-').split(',').join('_')}_#{key.to_s}.geojson"
+
+  File.open(filename, 'w') do |f|
+    f.write JSON.generate({type: 'FeatureCollection', features: feature_array })
+  end
 
 end
