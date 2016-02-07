@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>New York City Transit Frequency Visualization</title>
+  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />
+  <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+    #loader {
+        position :absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 1);
+        background-image: url('IMG_2903(3).jpg');
+        background-size: cover;
+        transition: background 1s ease-out;
+        -webkit-transition: background 1s ease-out;
+        -moz-transition: background 1s ease-out;
+        -o-transition: background 1s ease-out;
+        text-align: center;
+    }
+    #loader.done {
+        background: rgba(255, 255, 255, 0);
+    }
+    #loader.hide {
+        display: none;
+    }
+    #loader .message {
+        width: 100%;
+        position: absolute;
+        bottom: 50px;
+    }
+    #loader h1 {
+        font-family: 'Oswald', sans-serif;
+        font-size: 100px;
+        color: white;
+        text-transform: uppercase;
+        text-shadow: 0 4px 4px rgba(0,0,0,0.8);
+    }
+  </style>
+</head>
+<body>
+<div id='map-one' class='map'> </div>
+<div id='loader'><div class='message'><h1>Loading...</h1></div></div>
+<script>
+var latitude   = 40.750407;
+var longitude  = -73.993525;
+var zoom_level = 11;
+
+var loader = document.getElementById('loader');
+
+L.mapbox.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+var map = L.mapbox.map('map-one', 'mapbox.streets')
+  .setView([latitude, longitude], zoom_level);
+
+var featureLayer = L.mapbox.featureLayer()
+  .addTo(map);
+
+startLoading();
+featureLayer.loadURL('output_2016-01-22_07-30-00_08-00-00_bus.geojson')
+  .on('ready', finishedLoading);
+
+function startLoading() {
+  loader.className = '';
+}
+
+function finishedLoading() {
+  loader.className = 'hide';
+}
+</script>
+</body>
+</html>
