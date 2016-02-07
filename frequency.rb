@@ -14,13 +14,19 @@ $stdout.sync = true
 #----------------------------------------------------
 # Constants
 #----------------------------------------------------
-OUTPUT_DIR             = "output"
-START_TIME             = Time.new(2016,01,22,7,55,00)
-END_TIME               = Time.new(2016,01,22,8,00,00)
-SUBWAY_ONESTOP_ID      = "f-dr5r-nyctsubway"
-NYC_COORDINATES        = [ -80.0, 35.0,
-                           -73.0, 41.0 ]
+OUTPUT_DIR        = "output"
+START_TIME        = Time.new(2016,01,23,7,30,00)
+END_TIME          = Time.new(2016,01,23,8,00,00)
+SUBWAY_ONESTOP_ID = "f-dr5r-nyctsubway"
+NYC_COORDINATES   = [ -80.0, 35.0,
+                      -73.0, 41.0 ]
 
+#----------------------------------------------------
+# TimeFrame
+#
+# Class to hold a time frame and return it in
+# different formats
+#----------------------------------------------------
 class TimeFrame
   def initialize(start_time, end_time)
     @start_time = start_time
@@ -44,6 +50,12 @@ class TimeFrame
   end
 end
 
+#----------------------------------------------------
+# BoundingBox
+#
+# Class to hold coordinates of a bounding box and
+# return it in different formats
+#----------------------------------------------------
 class BoundingBox
   def initialize(coordinates)
     @coordinates = coordinates
@@ -59,6 +71,8 @@ class BoundingBox
 end
 
 #----------------------------------------------------
+# TransitlandAPIReader
+#
 # Class to handle reads of the Transitland API
 #----------------------------------------------------
 class TransitlandAPIReader
@@ -104,6 +118,9 @@ class TransitlandAPIReader
     return data
   end
 
+  #----------------------------------------------------
+  # Get JSON data, deciding on the fly whether to fetch
+  # it from the API or use the local cache
   def get_json_data(filename, url, endpoint)
     if File.exist?(filename)
       file_contents = File.readlines(filename)[0]
@@ -121,6 +138,9 @@ class TransitlandAPIReader
     return json_data
   end
 
+  #----------------------------------------------------
+  # Get a filename used for the local cache that is unique
+  # based on the request type and options
   def get_cache_filename(endpoint, args)
 
     filename = "#{CACHE_DIR}/#{endpoint}"
@@ -205,11 +225,13 @@ end
 time_frame       = TimeFrame.new(START_TIME, END_TIME)
 box              = BoundingBox.new(NYC_COORDINATES)
 reader           = TransitlandAPIReader.new(box, time_frame)
-features         = { :bus => [], :subway => [], :both => [] }
+features         = { :bus => [], :subway => [] }
+
+edges = reader.get_edges
 
 # Now that we know the number of occurrences of each edge,
 # pass through them again to create their properties for an eventual GeoJSON output
-reader.get_edges.each do |edge_key,edge_value|
+edges.each do |edge_key,edge_value|
   origin_id, destination_id = edge_key.split(",")
 
   origin      = reader.get_stop(origin_id)
@@ -229,12 +251,13 @@ reader.get_edges.each do |edge_key,edge_value|
     color = '#fdcc8a'
   end
 
-  properties = { "origin_onestop_id"      => origin_id,
-                 "destination_onestop_id" => destination_id,
-		 "frequency"              => frequency,
-                 "trips"                  => edge_value,
-		 "stroke-width"           => width,
-		 "stroke"                 => color
+  properties = { origin_onestop_id:      origin_id,
+                 destination_onestop_id: destination_id,
+		 frequency:              frequency,
+                 trips:                  edge_value,
+		 'stroke-width' =>       width,
+		 stroke:                 color,
+		 title:                  "Frequency: #{frequency.to_i} trips / hour"
 	       }
   feature = { type: 'Feature',
               properties: properties,
@@ -249,7 +272,6 @@ reader.get_edges.each do |edge_key,edge_value|
   else
     features[:bus] << feature
   end
-  features[:both] << feature
 end
 
 # Create the output directory if it does not exist
