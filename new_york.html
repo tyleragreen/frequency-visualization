@@ -1,12 +1,30 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset=utf-8 />
-  <title>New York City Transit Frequency Visualization</title>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="resource-type" content="document" />
+    <meta http-equiv="content-type" content="text/html; charset=US-ASCII" />
+    <meta http-equiv="content-language" content="en-us" />
+    <meta name="author" content="Tyler A. Green">
+    <meta name="contact" content="greent@tyleragreen.com" />
+    <meta name="copyright" content="Copyright (c)2016 Tyler A. Green. All Rights Reserved." />
+    <meta name="description" content="Personal website and blog for public transit enthusiast Tyler A. Green." />
+    <meta name="keywords" content="tyler a green, transit, public transit, transportation, cities, urban, buses, subways, light rail, blog, colorado" />
+    <link rel="icon" href="../favicon.ico">
+
+    <title>New York City Transit Frequency Visualization</title>
+
+  <!-- Mapbox Includes -->
   <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
   <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />
+
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+
   <style>
     body {
       margin: 0;
@@ -19,6 +37,8 @@
       bottom: 0;
       width: 100%;
     }
+
+    /* LOADER */
     #loader {
         position :absolute;
         top: 0;
@@ -50,6 +70,9 @@
         text-transform: uppercase;
         text-shadow: 0 4px 4px rgba(0,0,0,0.8);
     }
+    /* End LOADER */
+
+    /* MAP TOGGLES */
     .menu-ui {
       background: #fff;
       position: absolute;
@@ -88,12 +111,44 @@
           .menu-ui a.active:hover {
             background: #3074a4;
             }
+    /* End MAP TOGGLES */
+
+    /* LEGEND */
+    .legend label,
+    .legend span {
+      display: block;
+      float: left;
+      height: 15px;
+      width: 20%;
+      text-align: center;
+      font-size: 9px;
+      color: #808080;
+     }
+    /* End MAP LEGEND */
   </style>
 </head>
 <body>
 <div id='map-one' class='map'></div>
 <nav id='menu-ui' class='menu-ui'></nav>
 <div id='loader'><div class='message'><h1>Loading...</h1></div></div>
+
+<!-- Set the display of this container to none so we can add it programmatically to `legendControl` -->
+<div id='legend' style='display:none;'>
+  <strong>Transit Trips / Hour</strong><br />
+  <nav class='legend clearfix'>
+    <span style='background:#ffffff;'></span>
+    <span style='background:#fdcc8a;'></span>
+    <span style='background:#fc8d59;'></span>
+    <span style='background:#d7301f;'></span>
+    <span style='background:#ffffff;'></span>
+    <label></label>
+    <label>&lt; 9</label>
+    <label>9 - 12</label>
+    <label>&gt; 12</label>
+    <label></label>
+    <small>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>. View the code and explanation.</small>
+</div>
+
 <script>
 var latitude   = 40.72;
 var longitude  = -74.0;
@@ -103,14 +158,10 @@ var loader = document.getElementById('loader');
 var layers = document.getElementById('menu-ui');
 
 L.mapbox.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+
 var map = L.mapbox.map('map-one', 'mapbox.streets')
   .setView([latitude, longitude], zoom_level);
-
-//var featureLayer = L.mapbox.featureLayer()
-//  .addTo(map);
-//startLoading();
-//featureLayer.loadURL('output_2016-01-22_07-30-00_08-00-00_bus.geojson')
-//  .on('ready', finishedLoading);
+map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 
 addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'output_2016-01-22_07-30-00_08-00-00_bus.geojson');
 addLayer(L.mapbox.featureLayer(),false,'Subway - Friday',2,'output_2016-01-22_07-30-00_08-00-00_subway.geojson');
