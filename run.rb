@@ -22,8 +22,8 @@ $stdout.sync = true
 # Constants
 #----------------------------------------------------
 OUTPUT_DIR        = "output"
-START_TIME        = Time.new(2016,01,23,7,30,00)
-END_TIME          = Time.new(2016,01,23,8,00,00)
+START_TIME        = Time.new(2016,01,22,7,30,00)
+END_TIME          = Time.new(2016,01,22,8,00,00)
 SUBWAY_ONESTOP_ID = "f-dr5r-nyctsubway"
 NYC_COORDINATES   = [ -80.0, 35.0,
                       -73.0, 41.0 ]
@@ -58,8 +58,8 @@ edges.each do |edge_key,edge_value|
   origin      = reader.get_stop(origin_id)
   destination = reader.get_stop(destination_id)
 
-  origin_coordinates      = origin["geometry"]["coordinates"]
-  destination_coordinates = destination["geometry"]["coordinates"]
+  origin_coordinates      = origin.geometry["coordinates"]
+  destination_coordinates = destination.geometry["coordinates"]
   coordinates             = [ origin_coordinates, destination_coordinates ]
 
   frequency  = edge_value / time_frame.get_length
@@ -72,6 +72,9 @@ edges.each do |edge_key,edge_value|
     end
   end
 
+  feeds = origin.imported_from_feed_onestop_ids & destination.imported_from_feed_onestop_ids
+  next if feeds.include?("f-dr5-mtanyclirr")
+
   properties = { origin_onestop_id:      origin_id,
                  destination_onestop_id: destination_id,
 		 frequency:              frequency,
@@ -79,7 +82,7 @@ edges.each do |edge_key,edge_value|
 		 'stroke-width' =>       LINE_WIDTH,
 		 stroke:                 color,
 		 description:            "Frequency: #{frequency.to_i} trips / hour",
-		 title:                  "#{origin["name"]} to #{destination["name"]}"
+		 title:                  "#{origin.name} to #{destination.name}"
 	       }
   feature = { type:       'Feature',
               properties: properties,
@@ -89,7 +92,7 @@ edges.each do |edge_key,edge_value|
 	      }
 	    }
 
-  if origin["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID) && destination["imported_from_feed_onestop_ids"].include?(SUBWAY_ONESTOP_ID)
+  if feeds.include?(SUBWAY_ONESTOP_ID)
     features[:subway] << feature
   else
     features[:bus] << feature

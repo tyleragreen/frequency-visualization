@@ -6,6 +6,8 @@
 #
 #----------------------------------------------------
 
+require 'ostruct'
+
 #----------------------------------------------------
 # TimeFrame
 #
@@ -185,8 +187,9 @@ class TransitlandAPIReader
     json_data = get_json_data(filename, url, endpoint)
 
     stop_hash = {}
-    json_data.each do |stop|
-      stop_hash[stop["onestop_id"]] = stop
+    json_data.each do |stop_data|
+      stop = OpenStruct.new(stop_data)
+      stop_hash[stop.onestop_id] = stop
     end
 
     return stop_hash
