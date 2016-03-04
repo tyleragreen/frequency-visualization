@@ -1,6 +1,6 @@
 # New York City Transit Frequency Visualization
 
-This script and library uses the [Transitland Datastore](https://github.com/transitland/transitland-datastore) to create a transit frequency visualization for the five boroughs of New York City. The results are visible in `new_york.html` using [Mapbox](https://github.com/mapbox).
+This script and library uses the [Transitland Datastore](https://github.com/transitland/transitland-datastore) to create a transit frequency visualization for the five boroughs of New York City. The results are visible in `index.html` using [Mapbox](https://github.com/mapbox).
 
 ## Run Instructions
 No gems are required, so simply run `ruby run.rb`.

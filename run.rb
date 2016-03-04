@@ -29,15 +29,18 @@ NYC_COORDINATES   = [ -80.0, 35.0,
                       -73.0, 41.0 ]
 LINE_WIDTH        = 2.5
 COLORS            = { light:  { frequency: 0,
-		                color:     '#fdcc8a'
-			      },
-	              medium: { frequency: 8,
-		                color:     '#fc8d59'
-			      },
-	              heavy:  { frequency: 12,
-                                color:     '#d7301f'
-			      },
-	            }
+                                color:     '#fdcc8a',
+                                width:     2
+                              },
+                      medium: { frequency: 3,
+                                color:     '#fc8d59',
+                                width:     4,
+                              },
+                      heavy:  { frequency: 8,
+                                color:     '#d7301f',
+                                width:     6
+                              },
+              }
 #----------------------------------------------------
 # Main script flow
 #----------------------------------------------------
@@ -63,12 +66,13 @@ edges.each do |edge_key,edge_value|
   coordinates             = [ origin_coordinates, destination_coordinates ]
 
   frequency  = edge_value / time_frame.get_length
-  color      = nil
+  color = width = nil
 
   # You are ensured to find a color, as the lowest key is 0
   COLORS.each do |key,properties|
     if frequency > properties[:frequency]
       color = properties[:color]
+      width = properties[:width]
     end
   end
 
@@ -77,20 +81,19 @@ edges.each do |edge_key,edge_value|
 
   properties = { origin_onestop_id:      origin_id,
                  destination_onestop_id: destination_id,
-		 frequency:              frequency,
+                 frequency:              frequency,
                  trips:                  edge_value,
-		 'stroke-width' =>       LINE_WIDTH,
-		 stroke:                 color,
-		 description:            "Frequency: #{frequency.to_i} trips / hour",
-		 title:                  "#{origin.name} to #{destination.name}"
-	       }
+                 'stroke-width' =>       width,
+                 stroke:                 color,
+                 description:            "Frequency: #{frequency.to_i} trips / hour",
+                 title:                  "#{origin.name} to #{destination.name}"
+                     }
   feature = { type:       'Feature',
               properties: properties,
-	      geometry: {
-	        type:        'LineString',
-		coordinates: coordinates
-	      }
-	    }
+              geometry: { type:        'LineString',
+                          coordinates: coordinates
+                        }
+            }
 
   if feeds.include?(SUBWAY_ONESTOP_ID)
     features[:subway] << feature
