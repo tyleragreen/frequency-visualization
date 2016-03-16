@@ -8,11 +8,9 @@
 # Author: Tyler Green (greent@tyleragreen.com)
 #
 #----------------------------------------------------
-require 'net/http'
 require 'json'
-require 'openssl'
 require 'date'
-require_relative 'api_reader.rb'
+require 'transitland_client'
 
 # Ensure output is given periodically during
 # extensive read loops
@@ -41,25 +39,45 @@ COLORS            = { light:  { frequency: 0,
                                 width:     6
                               },
               }
+
+#----------------------------------------------------
+# Iterate through the stop pairs (transit route between two stops that departed in the specified time frame)
+# and count the number of times each edge occurs to begin to tabulate frequency
+def get_edges(pairs)
+  edges            = {}
+  edges.default    = 0
+
+  pairs.each do |edge|
+    if edge.origin_onestop_id != edge.destination_onestop_id
+      key         = [ edge.origin_onestop_id, edge.destination_onestop_id ]
+      edges[key] += 1
+    end
+  end
+
+  return edges
+end
+
 #----------------------------------------------------
 # Main script flow
 #----------------------------------------------------
-time_frame = TimeFrame.new(START_TIME, END_TIME)
-box        = BoundingBox.new(NYC_COORDINATES)
-reader     = TransitlandAPIReader.new(box, time_frame)
 features   = { :bus => [], :subway => [] }
+date       = START_TIME.strftime("%Y-%m-%d")
+time_frame = "#{START_TIME.strftime("%H:%M:%S")},#{END_TIME.strftime("%H:%M:%S")}"
 
 # Fetch from the API a list of all edges between any
 # two consecutive transit stops
-edges      = reader.get_edges
+pairs = TransitlandClient::ScheduleStopPair.find_by(bbox: NYC_COORDINATES.join(','),
+                                                    date: date,
+                                                    origin_departure_between: time_frame)
+edges = get_edges(pairs)
 
 # Now that we know the number of occurrences of each edge,
 # pass through them again to create their properties for an eventual GeoJSON output
 edges.each do |edge_key,edge_value|
   origin_id, destination_id = edge_key
 
-  origin      = reader.get_stop(origin_id)
-  destination = reader.get_stop(destination_id)
+  origin      = TransitlandClient::Stop.find_by(onestop_id: origin_id)
+  destination = TransitlandClient::Stop.find_by(onestop_id: destination_id)
 
   origin_coordinates      = origin.geometry["coordinates"]
   destination_coordinates = destination.geometry["coordinates"]
@@ -108,7 +126,7 @@ Dir.mkdir(OUTPUT_DIR) if OUTPUT_DIR && !File.exist?(OUTPUT_DIR)
 features.each do |key, feature_array|
 
   # Output the GeoJSON results to a file
-  filename = "#{OUTPUT_DIR}/output_#{time_frame.get_date}_#{time_frame.get_filename_format}_#{key.to_s}.geojson"
+  filename = "#{OUTPUT_DIR}/output_#{get_date}_#{time_frame}_#{key.to_s}.geojson"
 
   File.open(filename, 'w') do |f|
     f.write JSON.generate({type: 'FeatureCollection', features: feature_array })
