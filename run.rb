@@ -20,7 +20,7 @@ START_TIME        = Time.new(2016,01,23,7,45,00)
 END_TIME          = Time.new(2016,01,23,8,00,00)
 SECONDS_PER_HOUR  = 3600
 SUBWAY_ONESTOP_ID = "f-dr5r-nyctsubway"
-NYC_COORDINATES   = [ -80.0, 35.0,
+NYC_COORDINATES   = [ -74.5, 40.0,
                       -73.0, 41.0 ]
 LINE_WIDTH        = 2.5
 COLORS            = { light:  { frequency: 0,
