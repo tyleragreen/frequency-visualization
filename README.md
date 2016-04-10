@@ -1,3 +1,5 @@
+*WARNING*: This branch depends on changes to the [transitland_client](https://github.com/transitland/transitland-ruby-client) gem that have not yet been pushed to RubyGems.org. A Gemfile will be provided once the library changes have been published. The souce in `run.rb` can be referenced to see the new interface to the Transitland Ruby client.
+
 # New York City Transit Frequency Visualization
 
 This script and library uses the [Transitland Datastore](https://github.com/transitland/transitland-datastore) to create a transit frequency visualization for the five boroughs of New York City. The results are visible in `index.html` using [Mapbox](https://github.com/mapbox).
