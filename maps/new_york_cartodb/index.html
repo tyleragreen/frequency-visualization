@@ -1,0 +1,51 @@
+<html>
+<head>
+    <link rel="stylesheet" href="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/themes/css/cartodb.css" />
+    <script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
+  <!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v2/themes/css/cartodb.ie.css" />
+  <![endif]-->
+  <style>
+    html, body {width:100%; height:100%; padding: 0; margin: 0;}
+    #cartodb-map { width: 100%; height:100%; background: black;}
+  </style>
+
+  <script>
+    var map;
+    var latitude   = 40.72;
+    var longitude  = -74.0;
+    var zoom_level = 11;
+
+    $(document).ready(function(){
+      // initiate leaflet map
+      map = new L.Map('cartodb-map', { 
+        center: [latitude,longitude],
+        zoom: zoom_level
+      })
+
+      L.tileLayer('https://dnv9my2eseobd.cloudfront.net/v3/cartodb.map-4xtxp73f/{z}/{x}/{y}.png', {
+        attribution: 'Mapbox <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>'
+      }).addTo(map);
+
+      var layerUrl = 'https://tyleragreen.cartodb.com/api/v2/viz/472b4864-0dbe-11e6-bbc9-0ecd1babdde5/viz.json';
+
+      // change the query for the first layer
+      var subLayerOptions = {
+        sql: "SELECT * FROM table_00_subway",
+      }
+
+      cartodb.createLayer(map, layerUrl)
+        .addTo(map)
+        .on('done', function(layer) {
+          layer.getSubLayer(0).set(subLayerOptions);
+        }).on('error', function() {
+          //log the error
+        });
+    }); 
+  </script>
+</head>
+
+<body>
+  <div id='cartodb-map'></div>
+</body>
+</html>
