@@ -8,6 +8,28 @@
   <style>
     html, body {width:100%; height:100%; padding: 0; margin: 0;}
     #cartodb-map { width: 100%; height:100%; background: black;}
+    
+    #menu { position: absolute; top: 5px; right: 10px; width: 150px; height:60px; background: transparent; z-index:10;}
+    #menu a { 
+      margin: 15px 10px 0 0;
+      float: right;
+      vertical-align: baseline;
+      width: 120px;
+      padding: 10px;
+      text-align: center;
+      font: bold 11px "Helvetica",Arial;
+      line-height: normal;
+      color: #555;
+      border-radius: 4px;
+      border: 1px solid #777777;
+      background: #ffffff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #menu a.selected,
+    #menu a:hover { 
+      color: #F84F40;
+    }
   </style>
 
   <script>
@@ -17,19 +39,16 @@
     var zoom_level = 11;
 
     $(document).ready(function(){
-      // initiate leaflet map
       map = new L.Map('cartodb-map', { 
         center: [latitude,longitude],
         zoom: zoom_level
       })
 
-      L.tileLayer('https://dnv9my2eseobd.cloudfront.net/v3/cartodb.map-4xtxp73f/{z}/{x}/{y}.png', {
-        attribution: 'Mapbox <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>'
-      }).addTo(map);
+      L.tileLayer('https://dnv9my2eseobd.cloudfront.net/v3/cartodb.map-4xtxp73f/{z}/{x}/{y}.png').addTo(map);
 
       var layerUrl = 'https://tyleragreen.cartodb.com/api/v2/viz/d227b5cc-0f0f-11e6-bcfd-0e3ff518bd15/viz.json';
 
-      var subLayers = [];
+      var sublayers = [];
 
       cartodb.createLayer(map, layerUrl)
         .addTo(map)
@@ -37,19 +56,55 @@
           // change the query for the first layer
           var subLayerOptions = {
             sql: "SELECT * FROM composite_nyc WHERE data_type='friday_subway'",
+            cartocss: "#composite_nyc {polygon-opacity: 0;line-color: #EDF8B1;line-opacity: 0.9;}#composite_nyc [ stroke_width <= 6] {line-color: #2C7FB8;line-width:6}#composite_nyc [ stroke_width <= 5] {line-color: #7FCDBB;line-width:4}#composite_nyc [ stroke_width <= 3] {line-color: #EDF8B1;line-width:2}"
           }
       
           var sublayer = layer.getSubLayer(0);
           sublayer.set(subLayerOptions);
           sublayers.push(sublayer);
-        }).on('error', function() {
+        }).on('error', function(e) {
           //log the error
+          console.log(e);
         });
+        
+      var LayerActions = {
+        fridayBus: function(){
+          sublayers[0].setSQL("SELECT * FROM composite_nyc WHERE data_type='friday_bus'");
+          return true;
+        },
+        fridaySubway: function(){
+          sublayers[0].setSQL("SELECT * FROM composite_nyc WHERE data_type='friday_subway'");
+          return true;
+        },
+        saturdayBus: function(){
+          sublayers[0].setSQL("SELECT * FROM composite_nyc WHERE data_type='saturday_bus'");
+          return true;
+        },
+        saturdaySubway: function(){
+          sublayers[0].setSQL("SELECT * FROM composite_nyc WHERE data_type='saturday_subway'");
+          return true;
+        }
+      }
+      
+      $('#menu a').click(function() {
+        // Deselect all menu buttons and reselect the newly chosen one
+        $('#menu a').removeClass('selected');
+        $(this).addClass('selected');
+        
+        // Call the appropriate function to update the data populating the map
+        LayerActions[$(this).attr('id')]();
+      });
     }); 
   </script>
 </head>
 
 <body>
   <div id='cartodb-map'></div>
+  <div id='menu'>
+    <a href="#" id="fridayBus" class="fridayBus">FRIDAY BUS</a> 
+    <a href="#" id="fridaySubway" class="selected fridaySubway">FRIDAY SUBWAY</a> 
+    <a href="#" id="saturdayBus" class="saturdayBus">SATURDAY BUS</a>
+    <a href="#" id="saturdaySubway" class="saturdaySubway">SATURDAY SUBWAY</a>
+  </div>
 </body>
 </html>
