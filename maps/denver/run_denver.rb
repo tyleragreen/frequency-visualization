@@ -73,7 +73,7 @@ end
 #----------------------------------------------------
 # Main script flow
 #----------------------------------------------------
-features   = { :bus => [], :subway => [] }
+features   = { :bus => [] }
 date       = START_TIME.strftime("%Y-%m-%d")
 time_frame = "#{START_TIME.strftime("%H:%M:%S")},#{END_TIME.strftime("%H:%M:%S")}"
 time_frame_url = time_frame.gsub(':','-').split(',').join('_')
@@ -137,12 +137,7 @@ edges.each do |edge_key,edge_value|
                         }
             }
 
-  # Group the feeds by bus or subway, to be shown independently in the web view
-  if feeds.include?(SUBWAY_ONESTOP_ID)
-    features[:subway] << feature
-  else
-    features[:bus] << feature
-  end
+  features[:bus] << feature
 end
 
 Dir.mkdir(OUTPUT_DIR) if OUTPUT_DIR && !File.exist?(OUTPUT_DIR)
