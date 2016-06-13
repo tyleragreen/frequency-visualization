@@ -18,8 +18,10 @@
     <title>New York City Transit Frequency Visualization</title>
 
   <!-- Mapbox Includes -->
-  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
-  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />
+  <!--<script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />-->
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet' />
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
@@ -31,7 +33,7 @@
       padding: 0;
       font-family: 'Lato', sans-serif;
     }
-    .map {
+    #map {
       position: absolute;
       top: 0;
       bottom: 0;
@@ -128,9 +130,10 @@
   </style>
 </head>
 <body>
-<div id='map-one' class='map'></div>
-<nav id='menu-ui' class='menu-ui'></nav>
-<div id='loader'><div class='message'><h1>Loading...</h1></div></div>
+<!--<div id='map-one' class='map'></div>-->
+<div id='map'></div>
+<!--<nav id='menu-ui' class='menu-ui'></nav>-->
+<!--<div id='loader'><div class='message'><h1>Loading...</h1></div></div>-->
 
 <!-- Set the display of this container to none so we can add it programmatically to `legendControl` -->
 <div id='legend' style='display:none;'>
@@ -154,16 +157,27 @@ var latitude   = 40.72;
 var longitude  = -74.0;
 var zoom_level = 11;
 
-var loader = document.getElementById('loader');
-var layers = document.getElementById('menu-ui');
+//var loader = document.getElementById('loader');
+//var layers = document.getElementById('menu-ui');
 
-L.mapbox.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+/*mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
 
-var map = L.mapbox.map('map-one', 'mapbox.streets')
-  .setView([latitude, longitude], zoom_level);
-map.legendControl.addLegend(document.getElementById('legend').innerHTML);
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v8',
+  center: [latitude, longitude],
+  zoom: zoom_level
+});*/
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/streets-v8', //stylesheet location
+    center: [longitude, latitude], // starting position
+    zoom: zoom_level // starting zoom
+});
+//map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 
-addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'../data/output_2016-01-22_07-30-00_08-00-00_bus.geojson');
+/*addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'../data/output_2016-01-22_07-30-00_08-00-00_bus.geojson');
 addLayer(L.mapbox.featureLayer(),false,'Subway - Friday',2,'../data/output_2016-01-22_07-30-00_08-00-00_subway.geojson');
 addLayer(L.mapbox.featureLayer(),false,'Bus - Saturday',3,'../data/output_2016-01-23_07-30-00_08-00-00_bus.geojson');
 addLayer(L.mapbox.featureLayer(),false,'Subway - Saturday',4,'../data/output_2016-01-23_07-30-00_08-00-00_subway.geojson');
@@ -218,7 +232,7 @@ function addLayer(layer, active, name, zIndex, url) {
   });
 
   layers.appendChild(link);
-}
+}*/
 </script>
 
 <!-- Google Analytics -->
