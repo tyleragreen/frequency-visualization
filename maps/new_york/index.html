@@ -32,6 +32,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Lato', sans-serif;
+      font-size: 14px;
     }
     #map {
       position: absolute;
@@ -116,6 +117,16 @@
     /* End MAP TOGGLES */
 
     /* LEGEND */
+    #legend {
+      background: #fff;
+      position: absolute;
+      bottom: 25px;
+      right: 5px;
+      width: 350px;
+      padding: 15px;
+      z-index: 1;
+      border-radius: 8px;
+    }
     .legend label,
     .legend span {
       display: block;
@@ -124,7 +135,7 @@
       width: 20%;
       text-align: center;
       font-size: 9px;
-      color: #808080;
+      /*color: #808080;*/
      }
     /* End MAP LEGEND */
   </style>
@@ -132,11 +143,10 @@
 <body>
 <!--<div id='map-one' class='map'></div>-->
 <div id='map'></div>
-<!--<nav id='menu-ui' class='menu-ui'></nav>-->
-<!--<div id='loader'><div class='message'><h1>Loading...</h1></div></div>-->
+<nav id='menu-ui' class='menu-ui'></nav>
 
 <!-- Set the display of this container to none so we can add it programmatically to `legendControl` -->
-<div id='legend' style='display:none;'>
+<div id='legend'>
   <strong>Transit Trips / Hour</strong><br />
   <nav class='legend clearfix'>
     <span style='background:#ffffff;'></span>
@@ -155,7 +165,7 @@
 <script>
 var latitude   = 40.72;
 var longitude  = -74.0;
-var zoom_level = 11;
+var zoom_level = 10;
 
 //var loader = document.getElementById('loader');
 //var layers = document.getElementById('menu-ui');
@@ -171,9 +181,24 @@ var map = new mapboxgl.Map({
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
 var map = new mapboxgl.Map({
     container: 'map', // container id
-    style: 'mapbox://styles/mapbox/streets-v8', //stylesheet location
+    style: 'mapbox://styles/mapbox/dark-v9', //stylesheet location
     center: [longitude, latitude], // starting position
     zoom: zoom_level // starting zoom
+});
+
+map.on('load', function () {
+  map.addSource("lines", {
+    "type": "geojson",
+    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_bus.geojson"
+  });
+  map.addLayer({
+    'id': 'lines',
+    'type': 'fill',
+    'source': 'lines',
+    'paint': {
+      'fill-color': "#00ffff"
+    }
+  });
 });
 //map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 
