@@ -17,129 +17,92 @@
 
     <title>New York City Transit Frequency Visualization</title>
 
-  <!-- Mapbox Includes -->
-  <!--<script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
-  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />-->
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet' />
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
-  <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Lato', sans-serif;
-      font-size: 14px;
-    }
-    #map {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 100%;
-    }
-
-    /* LOADER */
-    #loader {
-        position :absolute;
+    <!-- Mapbox Includes -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet' />
+  
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+  
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+      }
+      #map {
+        position: absolute;
         top: 0;
         bottom: 0;
         width: 100%;
-        background-image: url('IMG_2903(3).jpg');
-        background-size: cover;
-        transition: background 1s ease-out;
-        -webkit-transition: background 1s ease-out;
-        -moz-transition: background 1s ease-out;
-        -o-transition: background 1s ease-out;
-        text-align: center;
-    }
-    #loader.done {
-        background: rgba(255, 255, 255, 0);
-    }
-    #loader.hide {
-        display: none;
-    }
-    #loader .message {
-        width: 100%;
-        position: absolute;
-        bottom: 50px;
-    }
-    #loader h1 {
-        font-family: 'Oswald', sans-serif;
-        font-size: 100px;
-        color: white;
-        text-transform: uppercase;
-        text-shadow: 0 4px 4px rgba(0,0,0,0.8);
-    }
-    /* End LOADER */
-
-    /* MAP TOGGLES */
-    .menu-ui {
-      background: #fff;
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      z-index:1;
-      border-radius: 3px;
-      width: 160px;
-      border: 1px solid rgba(0,0,0,0.4);
       }
-      .menu-ui a {
-        font-size: 16px;
-        color: #404040;
-        display: block;
-        margin: 0;
-        padding: 13px;
-        text-decoration: none;
-        border-bottom: 1px solid rgba(0,0,0,0.25);
-        text-align: center;
+  
+      /* MAP TOGGLES */
+      .menu-ui {
+        background: #fff;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index:1;
+        border-radius: 3px;
+        width: 160px;
+        border: 1px solid rgba(0,0,0,0.4);
         }
-        .menu-ui a:first-child {
-          border-radius: 3px 3px 0 0;
-          }
-        .menu-ui a:last-child {
-          border: none;
-          border-radius: 0 0 3px 3px;
-          }
-        .menu-ui a:hover {
-          background: #f8f8f8;
+        .menu-ui a {
+          font-size: 16px;
           color: #404040;
+          display: block;
+          margin: 0;
+          padding: 13px;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(0,0,0,0.25);
+          text-align: center;
           }
-        .menu-ui a.active {
-          background: #3887BE;
-          color: #FFF;
-          }
-          .menu-ui a.active:hover {
-            background: #3074a4;
+          .menu-ui a:first-child {
+            border-radius: 3px 3px 0 0;
             }
-    /* End MAP TOGGLES */
-
-    /* LEGEND */
-    #legend {
-      background: #fff;
-      position: absolute;
-      bottom: 25px;
-      right: 5px;
-      width: 350px;
-      padding: 15px;
-      z-index: 1;
-      border-radius: 8px;
-    }
-    .legend label,
-    .legend span {
-      display: block;
-      float: left;
-      height: 15px;
-      width: 20%;
-      text-align: center;
-      font-size: 9px;
-      /*color: #808080;*/
-     }
-    /* End MAP LEGEND */
-  </style>
-</head>
+          .menu-ui a:last-child {
+            border: none;
+            border-radius: 0 0 3px 3px;
+            }
+          .menu-ui a:hover {
+            background: #f8f8f8;
+            color: #404040;
+            }
+          .menu-ui a.active {
+            background: #3887BE;
+            color: #FFF;
+            }
+            .menu-ui a.active:hover {
+              background: #3074a4;
+              }
+      /* End MAP TOGGLES */
+  
+      /* LEGEND */
+      #legend {
+        background: #fff;
+        position: absolute;
+        bottom: 25px;
+        right: 5px;
+        width: 350px;
+        padding: 15px;
+        z-index: 1;
+        border-radius: 8px;
+      }
+      .legend label,
+      .legend span {
+        display: block;
+        float: left;
+        height: 15px;
+        width: 20%;
+        text-align: center;
+        font-size: 9px;
+        /*color: #808080;*/
+       }
+      /* End MAP LEGEND */
+    </style>
+  </head>
 <body>
 <!--<div id='map-one' class='map'></div>-->
 <div id='map'></div>
@@ -170,20 +133,12 @@ var zoom_level = 10;
 //var loader = document.getElementById('loader');
 //var layers = document.getElementById('menu-ui');
 
-/*mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
-
-var map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v8',
-  center: [latitude, longitude],
-  zoom: zoom_level
-});*/
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
 var map = new mapboxgl.Map({
-    container: 'map', // container id
-    style: 'mapbox://styles/mapbox/dark-v9', //stylesheet location
-    center: [longitude, latitude], // starting position
-    zoom: zoom_level // starting zoom
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v9',
+    center: [longitude, latitude],
+    zoom: zoom_level
 });
 
 map.on('load', function () {
@@ -192,11 +147,13 @@ map.on('load', function () {
     "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_bus.geojson"
   });
   map.addLayer({
-    'id': 'lines',
-    'type': 'fill',
+    'id': 'second_lines',
+    'type': 'line',
     'source': 'lines',
+    'filter': ['>', 'frequency', 10],
     'paint': {
-      'fill-color': "#00ffff"
+      'line-width': 4,
+      'line-color': 'orange'
     }
   });
 });
