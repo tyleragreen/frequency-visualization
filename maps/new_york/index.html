@@ -104,18 +104,16 @@
     </style>
   </head>
 <body>
-<!--<div id='map-one' class='map'></div>-->
 <div id='map'></div>
 <nav id='menu-ui' class='menu-ui'></nav>
 
-<!-- Set the display of this container to none so we can add it programmatically to `legendControl` -->
 <div id='legend'>
   <strong>Transit Trips / Hour</strong><br />
   <nav class='legend clearfix'>
     <span style='background:#ffffff;'></span>
-    <span style='background:#fdcc8a;'></span>
-    <span style='background:#fc8d59;'></span>
-    <span style='background:#d7301f;'></span>
+    <span style='background:#EDF8B1;'></span>
+    <span style='background:#7FCDBB;'></span>
+    <span style='background:#2C7FB8;'></span>
     <span style='background:#ffffff;'></span>
     <label></label>
     <label>&lt; 4</label>
@@ -130,7 +128,6 @@ var latitude   = 40.72;
 var longitude  = -74.0;
 var zoom_level = 10;
 
-//var loader = document.getElementById('loader');
 //var layers = document.getElementById('menu-ui');
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
@@ -140,22 +137,71 @@ var map = new mapboxgl.Map({
     center: [longitude, latitude],
     zoom: zoom_level
 });
-
+var middle = {
+    'id': 'middle_frequent',
+    'type': 'line',
+    'source': 'schedule_stop_pairs',
+    'filter': ['all',
+               ['>=', 'frequency', 4],
+               ['<=',  'frequency', 8]],
+    'paint': {
+      'line-width': 4,
+      'line-color': '#7FCDBB',
+      'line-opacity': 0.7
+    }
+  };
 map.on('load', function () {
-  map.addSource("lines", {
+  map.addSource("schedule_stop_pairs", {
     "type": "geojson",
     "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_bus.geojson"
   });
+  map.addLayer(middle);
   map.addLayer({
-    'id': 'second_lines',
+    'id': 'least_frequent',
     'type': 'line',
-    'source': 'lines',
-    'filter': ['>', 'frequency', 10],
+    'source': 'schedule_stop_pairs',
+    'filter': ['<', 'frequency', 4],
     'paint': {
-      'line-width': 4,
-      'line-color': 'orange'
+      'line-width': 2,
+      'line-color': '#EDF8B1',
+      'line-opacity': 0.7
     }
   });
+  map.addLayer({
+    'id': 'most_frequent',
+    'type': 'line',
+    'source': 'schedule_stop_pairs',
+    'filter': ['>', 'frequency', 8],
+    'paint': {
+      'line-width': 6,
+      'line-color': '#2C7FB8',
+      'line-opacity': 0.7
+    }
+  });
+});
+
+var popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false
+});
+
+map.on('mousemove', function(e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['most_frequent'] });
+    // Change the cursor style as a UI indicator.
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+
+    if (!features.length) {
+        popup.remove();
+        return;
+    }
+
+    var feature = features[0];
+
+    // Populate the popup and set its coordinates
+    // based on the feature found.
+    popup.setLngLat(feature.geometry.coordinates[0])
+        .setHTML(feature.properties.description)
+        .addTo(map);
 });
 //map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 
