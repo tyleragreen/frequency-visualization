@@ -39,42 +39,43 @@
       }
   
       /* MAP TOGGLES */
-      .menu-ui {
+      #menu {
         background: #fff;
         position: absolute;
         top: 15px;
         right: 15px;
         z-index:1;
-        border-radius: 3px;
-        width: 160px;
-        border: 1px solid rgba(0,0,0,0.4);
+        border-radius: 6px;
+        width: 140px;
+        border: 3px solid white;
         }
-        .menu-ui a {
-          font-size: 16px;
+        #menu a {
+          font-size: 14px;
           color: #404040;
           display: block;
           margin: 0;
-          padding: 13px;
+          padding: 10px;
+          font-weight: bold;
           text-decoration: none;
           border-bottom: 1px solid rgba(0,0,0,0.25);
           text-align: center;
           }
-          .menu-ui a:first-child {
+          #menu a:first-child {
             border-radius: 3px 3px 0 0;
             }
-          .menu-ui a:last-child {
+          #menu a:last-child {
             border: none;
             border-radius: 0 0 3px 3px;
             }
-          .menu-ui a:hover {
+          #menu a:hover {
             background: #f8f8f8;
             color: #404040;
             }
-          .menu-ui a.active {
+          #menu a.active {
             background: #3887BE;
             color: #FFF;
             }
-            .menu-ui a.active:hover {
+            #menu a.active:hover {
               background: #3074a4;
               }
       /* End MAP TOGGLES */
@@ -86,7 +87,7 @@
         bottom: 25px;
         right: 5px;
         width: 350px;
-        padding: 15px;
+        padding: 0px 15px;
         z-index: 1;
         border-radius: 8px;
       }
@@ -105,10 +106,10 @@
   </head>
 <body>
 <div id='map'></div>
-<nav id='menu-ui' class='menu-ui'></nav>
+<nav id='menu'></nav>
 
 <div id='legend'>
-  <strong>Transit Trips / Hour</strong><br />
+  <p><strong>Transit Trips / Hour</strong></p>
   <nav class='legend clearfix'>
     <span style='background:#ffffff;'></span>
     <span style='background:#EDF8B1;'></span>
@@ -120,15 +121,17 @@
     <label>4 - 8</label>
     <label>&gt; 8</label>
     <label></label>
-    <small>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>. View <a href="https://github.com/tyleragreen/frequency-visualization" target="_blank">the code on GitHub</a> and <a href="http://www.tyleragreen.com/blog/2016/02/new-york-city-transit-frequency-visualization" target="_blank">full explanation</a>.</small>
+  </nav>
+  <div><small>
+    <p>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>.</p>
+    <p>View <a href="https://github.com/tyleragreen/frequency-visualization" target="_blank">the code on GitHub</a> and <a href="http://www.tyleragreen.com/blog/2016/02/new-york-city-transit-frequency-visualization" target="_blank">full explanation</a>.</p>
+  </small></div>
 </div>
 
 <script>
 var latitude   = 40.72;
 var longitude  = -74.0;
 var zoom_level = 10;
-
-//var layers = document.getElementById('menu-ui');
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
 var map = new mapboxgl.Map({
@@ -137,48 +140,128 @@ var map = new mapboxgl.Map({
     center: [longitude, latitude],
     zoom: zoom_level
 });
-var middle = {
-    'id': 'middle_frequent',
-    'type': 'line',
-    'source': 'schedule_stop_pairs',
-    'filter': ['all',
-               ['>=', 'frequency', 4],
-               ['<=',  'frequency', 8]],
-    'paint': {
-      'line-width': 4,
-      'line-color': '#7FCDBB',
-      'line-opacity': 0.7
-    }
-  };
+  
+var sublayers = ['high_frequency','low_frequency','middle_frequency'];
+var subLayersCrossProduct = [];
+
 map.on('load', function () {
-  map.addSource("schedule_stop_pairs", {
+  map.addSource("friday_bus", {
     "type": "geojson",
     "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_bus.geojson"
   });
-  map.addLayer(middle);
-  map.addLayer({
-    'id': 'least_frequent',
-    'type': 'line',
-    'source': 'schedule_stop_pairs',
-    'filter': ['<', 'frequency', 4],
-    'paint': {
-      'line-width': 2,
-      'line-color': '#EDF8B1',
-      'line-opacity': 0.7
-    }
+  map.addSource("friday_subway", {
+    "type": "geojson",
+    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_subway.geojson"
   });
-  map.addLayer({
-    'id': 'most_frequent',
-    'type': 'line',
-    'source': 'schedule_stop_pairs',
-    'filter': ['>', 'frequency', 8],
-    'paint': {
-      'line-width': 6,
-      'line-color': '#2C7FB8',
-      'line-opacity': 0.7
-    }
+  map.addSource("saturday_bus", {
+    "type": "geojson",
+    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-23_07-30-00_08-00-00_bus.geojson"
   });
+  map.addSource("saturday_subway", {
+    "type": "geojson",
+    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-23_07-30-00_08-00-00_subway.geojson"
+  });
+  addLayer(map, true,  'Friday Buses',   'friday_bus');
+  addLayer(map, false, 'Friday Subway',  'friday_subway');
+  addLayer(map, false, 'Saturday Buses', 'saturday_bus');
+  addLayer(map, false, 'Saturday Subway','saturday_subway');
 });
+
+function createSource(sourceId, properties) {
+  var sublayerId = sourceId + '_' + properties + '_frequency';
+  subLayersCrossProduct.push(sublayerId);
+
+  if (properties === 'middle') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['all',
+                 ['>=', 'frequency', 4],
+                 ['<=',  'frequency', 8]],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 4,
+        'line-color': '#7FCDBB',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'low') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['<', 'frequency', 4],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 2,
+        'line-color': '#EDF8B1',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'high') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['>', 'frequency', 8],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 6,
+        'line-color': '#2C7FB8',
+        'line-opacity': 0.7
+      }
+    };
+  } else {
+    console.log('error');
+  }
+};
+
+function addLayer(map, visible, name, id) {
+  map.addLayer(createSource(id, 'middle'));
+  map.addLayer(createSource(id, 'low'));
+  map.addLayer(createSource(id, 'high'));
+  
+  var link = document.createElement('a');
+  link.href = '#';
+  link.textContent = name;
+  
+  if (visible === true) {
+    link.className = 'active';
+    
+    for (var sublayer_index in sublayers) {
+      var sublayer_id = id + '_' + sublayers[sublayer_index];
+      map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+    }
+  }
+
+  link.onclick = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    for (var sublayer_index in sublayers) {
+      var sublayer_id = id + '_' + sublayers[sublayer_index];
+      var visibility = map.getLayoutProperty(sublayer_id, 'visibility');
+  
+      if (visibility === 'visible') {
+          map.setLayoutProperty(sublayer_id, 'visibility', 'none');
+          this.className = '';
+      } else {
+          this.className = 'active';
+          map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+      }
+    }
+  };
+
+  var layers = document.getElementById('menu');
+  layers.appendChild(link);
+}
 
 var popup = new mapboxgl.Popup({
     closeButton: false,
@@ -186,7 +269,7 @@ var popup = new mapboxgl.Popup({
 });
 
 map.on('mousemove', function(e) {
-    var features = map.queryRenderedFeatures(e.point, { layers: ['most_frequent'] });
+    var features = map.queryRenderedFeatures(e.point, { layers: subLayersCrossProduct });
     // Change the cursor style as a UI indicator.
     map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
 
@@ -203,64 +286,6 @@ map.on('mousemove', function(e) {
         .setHTML(feature.properties.description)
         .addTo(map);
 });
-//map.legendControl.addLegend(document.getElementById('legend').innerHTML);
-
-/*addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'../data/output_2016-01-22_07-30-00_08-00-00_bus.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Subway - Friday',2,'../data/output_2016-01-22_07-30-00_08-00-00_subway.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Bus - Saturday',3,'../data/output_2016-01-23_07-30-00_08-00-00_bus.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Subway - Saturday',4,'../data/output_2016-01-23_07-30-00_08-00-00_subway.geojson');
-
-function startLoading() {
-  loader.className = '';
-}
-
-function finishedLoading() {
-  loader.className = 'hide';
-}
-
-function addLayer(layer, active, name, zIndex, url) {
-  layer.setZIndex(zIndex)
-    .addTo(map);
-
-  var link = document.createElement('a');
-  link.href      = '#';
-  link.className = 'active';
-  link.innerHTML = name;
-
-  if (active) {
-    startLoading();
-    layer.loadURL(url)
-      .on('ready', finishedLoading);
-    map.addLayer(layer);
-    link.className = 'active';
-  } else {
-    layer.loadURL(url);
-    map.removeLayer(layer);
-    link.className = '';
-  }
-
-
-  link.onclick = function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (map.hasLayer(layer)) {
-      map.removeLayer(layer);
-      this.className = '';
-    } else {
-      map.addLayer(layer)
-      this.className = 'active';
-    }
-  };
-  layer.on('mouseover', function(e) {
-    e.layer.openPopup();
-  });
-  layer.on('mouseout', function(e) {
-    e.layer.closePopup();
-  });
-
-  layers.appendChild(link);
-}*/
 </script>
 
 <!-- Google Analytics -->
