@@ -40,35 +40,36 @@
   
       /* MAP TOGGLES */
       #menu {
-        background: #fff;
         position: absolute;
         top: 15px;
         right: 15px;
         z-index:1;
         border-radius: 6px;
         width: 140px;
-        border: 3px solid white;
         }
         #menu a {
+          border: 3px solid white;
           font-size: 14px;
+          background: #fff;
           color: #404040;
           display: block;
-          margin: 0;
-          padding: 10px;
+          margin-bottom: 10px;
+          padding: 5px;
           font-weight: bold;
           text-decoration: none;
-          border-bottom: 1px solid rgba(0,0,0,0.25);
+          /*border-bottom: 1px solid rgba(0,0,0,0.25);*/
           text-align: center;
+          border-radius: 5px;
           }
-          #menu a:first-child {
+          /*#menu a:first-child {
             border-radius: 3px 3px 0 0;
             }
           #menu a:last-child {
             border: none;
             border-radius: 0 0 3px 3px;
-            }
+            }*/
           #menu a:hover {
-            background: #f8f8f8;
+            background: #f4f4f4;
             color: #404040;
             }
           #menu a.active {
@@ -86,7 +87,7 @@
         position: absolute;
         bottom: 25px;
         right: 5px;
-        width: 350px;
+        width: 300px;
         padding: 0px 15px;
         z-index: 1;
         border-radius: 8px;
@@ -185,7 +186,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 4,
         'line-color': '#7FCDBB',
-        'line-opacity': 0.7
+        'line-opacity': 0.2
       }
     };
   } else if (properties === 'low') {
@@ -200,7 +201,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 2,
         'line-color': '#EDF8B1',
-        'line-opacity': 0.7
+        'line-opacity': 0.2
       }
     };
   } else if (properties === 'high') {
@@ -215,7 +216,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 6,
         'line-color': '#2C7FB8',
-        'line-opacity': 0.7
+        'line-opacity': 0.2
       }
     };
   } else {
@@ -250,11 +251,11 @@ function addLayer(map, visible, name, id) {
       var visibility = map.getLayoutProperty(sublayer_id, 'visibility');
   
       if (visibility === 'visible') {
-          map.setLayoutProperty(sublayer_id, 'visibility', 'none');
-          this.className = '';
+        map.setLayoutProperty(sublayer_id, 'visibility', 'none');
+        this.className = '';
       } else {
-          this.className = 'active';
-          map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+        this.className = 'active';
+        map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
       }
     }
   };
@@ -269,22 +270,24 @@ var popup = new mapboxgl.Popup({
 });
 
 map.on('mousemove', function(e) {
-    var features = map.queryRenderedFeatures(e.point, { layers: subLayersCrossProduct });
-    // Change the cursor style as a UI indicator.
-    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+  var features = map.queryRenderedFeatures(e.point, { layers: subLayersCrossProduct });
+  // Change the cursor style as a UI indicator.
+  map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
 
-    if (!features.length) {
-        popup.remove();
-        return;
-    }
+  if (!features.length) {
+    popup.remove();
+    return;
+  }
 
-    var feature = features[0];
+  var feature = features[0];
+  //map.setPaintProperty(feature.layer.id,'line-opacity',1);
 
-    // Populate the popup and set its coordinates
-    // based on the feature found.
-    popup.setLngLat(feature.geometry.coordinates[0])
-        .setHTML(feature.properties.description)
-        .addTo(map);
+  // Populate the popup and set its coordinates on the middle of the line feature
+  var lon = (feature.geometry.coordinates[0][0] + feature.geometry.coordinates[1][0]) / 2;
+  var lat = (feature.geometry.coordinates[0][1] + feature.geometry.coordinates[1][1]) / 2;
+  popup.setLngLat([lon, lat])
+    .setHTML(feature.properties.description)
+    .addTo(map);
 });
 </script>
 
