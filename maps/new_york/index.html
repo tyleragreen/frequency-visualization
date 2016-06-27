@@ -92,15 +92,21 @@
         z-index: 1;
         border-radius: 8px;
       }
-      .legend label,
-      .legend span {
+      #legend a {
+        color: #3074a4;
+        text-decoration: underline;
+      }
+      #legend a:hover {
+        text-decoration: none;
+      }
+      #legend label,
+      #legend span {
         display: block;
         float: left;
         height: 15px;
         width: 20%;
         text-align: center;
         font-size: 9px;
-        /*color: #808080;*/
        }
       /* End MAP LEGEND */
     </style>
@@ -111,7 +117,7 @@
 
 <div id='legend'>
   <p><strong>Transit Trips / Hour</strong></p>
-  <nav class='legend clearfix'>
+  <nav class='clearfix'>
     <span style='background:#ffffff;'></span>
     <span style='background:#EDF8B1;'></span>
     <span style='background:#7FCDBB;'></span>
@@ -336,11 +342,26 @@ map.on('mousemove', function(e) {
   // Pop-ulate the pop-up and set its coordinates on the middle of the line feature
   var lon = (feature.geometry.coordinates[0][0] + feature.geometry.coordinates[1][0]) / 2;
   var lat = (feature.geometry.coordinates[0][1] + feature.geometry.coordinates[1][1]) / 2;
+  
+  var template = $('#template').html();
+  var templateData = {
+    frequency: feature.properties.description,
+    title: feature.properties.title,
+    origin: feature.properties.origin_onestop_id,
+    dest: feature.properties.destination_onestop_id
+  };
+  Mustache.parse(template);   // optional, speeds up future uses
+  var rendered = Mustache.render(template, templateData);
   popup.setLngLat([lon, lat])
-    .setHTML(feature.properties.description)
+    .setHTML(rendered)
     .addTo(map);
 });
 </script>
+<script id="template" type="x-tmpl-mustache">
+<b>{{ title }}</b><br />
+{{ frequency }}
+</script>
+<script src="bower_components/mustache.js/mustache.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
 <!-- Google Analytics -->

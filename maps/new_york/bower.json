@@ -1,0 +1,22 @@
+{
+  "name": "new_york",
+  "version": "0.0.0",
+  "homepage": "https://github.com/tyleragreen/frequency-visualization",
+  "authors": [
+    "tyleragreen <tgreen8091@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "mustache.js": "mustache#~2.2.1"
+  }
+}

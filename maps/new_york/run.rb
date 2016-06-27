@@ -118,14 +118,9 @@ edges.each do |edge_key,edge_value|
   next if feeds.include?("f-dr5-mtanyclirr")
 
   # Construct the properties for this GeoJSON feature
-  properties = { origin_onestop_id:      origin_id,
-                 destination_onestop_id: destination_id,
-                 frequency:              frequency,
-                 trips:                  edge_value,
-                 'stroke-width' =>       width,
-                 stroke:                 color,
-                 description:            "Frequency: #{frequency.to_i} trips / hour",
-                 title:                  "#{origin.get(:name)} to #{destination.get(:name)}"
+  properties = { frequency: frequency,
+                 origin:    origin.get(:name),
+                 dest:      destination.get(:name)
                }
 
   # Add the properties and coordinates to a new GeoJSON feature
