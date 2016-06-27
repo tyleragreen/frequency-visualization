@@ -17,209 +17,352 @@
 
     <title>New York City Transit Frequency Visualization</title>
 
-  <!-- Mapbox Includes -->
-  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
-  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
-  <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Lato', sans-serif;
-    }
-    .map {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 100%;
-    }
-
-    /* LOADER */
-    #loader {
-        position :absolute;
+    <!-- Mapbox Includes -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet' />
+  
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+  
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+      }
+      #map {
+        position: absolute;
         top: 0;
         bottom: 0;
         width: 100%;
-        background-image: url('IMG_2903(3).jpg');
-        background-size: cover;
-        transition: background 1s ease-out;
-        -webkit-transition: background 1s ease-out;
-        -moz-transition: background 1s ease-out;
-        -o-transition: background 1s ease-out;
-        text-align: center;
-    }
-    #loader.done {
-        background: rgba(255, 255, 255, 0);
-    }
-    #loader.hide {
-        display: none;
-    }
-    #loader .message {
-        width: 100%;
-        position: absolute;
-        bottom: 50px;
-    }
-    #loader h1 {
-        font-family: 'Oswald', sans-serif;
-        font-size: 100px;
-        color: white;
-        text-transform: uppercase;
-        text-shadow: 0 4px 4px rgba(0,0,0,0.8);
-    }
-    /* End LOADER */
-
-    /* MAP TOGGLES */
-    .menu-ui {
-      background: #fff;
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      z-index:1;
-      border-radius: 3px;
-      width: 160px;
-      border: 1px solid rgba(0,0,0,0.4);
       }
-      .menu-ui a {
-        font-size: 16px;
-        color: #404040;
-        display: block;
-        margin: 0;
-        padding: 13px;
-        text-decoration: none;
-        border-bottom: 1px solid rgba(0,0,0,0.25);
-        text-align: center;
+  
+      /* MAP TOGGLES */
+      #menu {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index:1;
+        border-radius: 6px;
+        width: 140px;
         }
-        .menu-ui a:first-child {
-          border-radius: 3px 3px 0 0;
-          }
-        .menu-ui a:last-child {
-          border: none;
-          border-radius: 0 0 3px 3px;
-          }
-        .menu-ui a:hover {
-          background: #f8f8f8;
+        #menu a {
+          border: 3px solid white;
+          font-size: 14px;
+          background: #fff;
           color: #404040;
+          display: block;
+          margin-bottom: 10px;
+          padding: 5px;
+          font-weight: bold;
+          text-decoration: none;
+          /*border-bottom: 1px solid rgba(0,0,0,0.25);*/
+          text-align: center;
+          border-radius: 5px;
           }
-        .menu-ui a.active {
-          background: #3887BE;
-          color: #FFF;
-          }
-          .menu-ui a.active:hover {
-            background: #3074a4;
+          /*#menu a:first-child {
+            border-radius: 3px 3px 0 0;
             }
-    /* End MAP TOGGLES */
-
-    /* LEGEND */
-    .legend label,
-    .legend span {
-      display: block;
-      float: left;
-      height: 15px;
-      width: 20%;
-      text-align: center;
-      font-size: 9px;
-      color: #808080;
-     }
-    /* End MAP LEGEND */
-  </style>
-</head>
+          #menu a:last-child {
+            border: none;
+            border-radius: 0 0 3px 3px;
+            }*/
+          #menu a:hover {
+            background: #f4f4f4;
+            color: #404040;
+            }
+          #menu a.active {
+            background: #3887BE;
+            color: #FFF;
+            }
+            #menu a.active:hover {
+              background: #3074a4;
+              }
+      /* End MAP TOGGLES */
+  
+      /* LEGEND */
+      #legend {
+        background: #fff;
+        position: absolute;
+        bottom: 25px;
+        right: 5px;
+        width: 300px;
+        padding: 0px 15px;
+        z-index: 1;
+        border-radius: 8px;
+      }
+      #legend a {
+        color: #3074a4;
+        text-decoration: underline;
+      }
+      #legend a:hover {
+        text-decoration: none;
+      }
+      #legend label,
+      #legend span {
+        display: block;
+        float: left;
+        height: 15px;
+        width: 20%;
+        text-align: center;
+        font-size: 9px;
+       }
+      /* End MAP LEGEND */
+    </style>
+  </head>
 <body>
-<div id='map-one' class='map'></div>
-<nav id='menu-ui' class='menu-ui'></nav>
-<div id='loader'><div class='message'><h1>Loading...</h1></div></div>
+<div id='map'></div>
+<nav id='menu'></nav>
 
-<!-- Set the display of this container to none so we can add it programmatically to `legendControl` -->
-<div id='legend' style='display:none;'>
-  <strong>Transit Trips / Hour</strong><br />
-  <nav class='legend clearfix'>
+<div id='legend'>
+  <p><strong>Transit Trips / Hour</strong></p>
+  <nav class='clearfix'>
     <span style='background:#ffffff;'></span>
-    <span style='background:#fdcc8a;'></span>
-    <span style='background:#fc8d59;'></span>
-    <span style='background:#d7301f;'></span>
+    <span style='background:#EDF8B1;'></span>
+    <span style='background:#7FCDBB;'></span>
+    <span style='background:#2C7FB8;'></span>
     <span style='background:#ffffff;'></span>
     <label></label>
     <label>&lt; 4</label>
     <label>4 - 8</label>
     <label>&gt; 8</label>
     <label></label>
-    <small>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>. View <a href="https://github.com/tyleragreen/frequency-visualization" target="_blank">the code on GitHub</a> and <a href="http://www.tyleragreen.com/blog/2016/02/new-york-city-transit-frequency-visualization" target="_blank">full explanation</a>.</small>
+  </nav>
+  <div><small>
+    <p>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>.</p>
+    <p>View <a href="https://github.com/tyleragreen/frequency-visualization" target="_blank">the code on GitHub</a> and <a href="http://www.tyleragreen.com/blog/2016/02/new-york-city-transit-frequency-visualization" target="_blank">full explanation</a>.</p>
+  </small></div>
 </div>
 
 <script>
 var latitude   = 40.72;
 var longitude  = -74.0;
-var zoom_level = 11;
+var zoom_level = 10;
 
-var loader = document.getElementById('loader');
-var layers = document.getElementById('menu-ui');
+// Create a dummy 'selected' feature to make initial comparisons work
+var feature = {
+  properties: {
+    title: 'dummy'
+  }
+};
+// Create a GeoJSON object to hold the edge that is hovered over
+var selectedData = {
+  type: 'FeatureCollection',
+  features: []
+};
 
-L.mapbox.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v9',
+    center: [longitude, latitude],
+    zoom: zoom_level
+});
 
-var map = L.mapbox.map('map-one', 'mapbox.streets')
-  .setView([latitude, longitude], zoom_level);
-map.legendControl.addLegend(document.getElementById('legend').innerHTML);
+var allIds = ['friday_bus','friday_subway','saturday_bus','saturday_subway'];
+var sublayers = ['high_frequency','low_frequency','middle_frequency'];
+var subLayersCrossProduct = [];
 
-addLayer(L.mapbox.featureLayer(),true,'Bus - Friday',1,'../data/output_2016-01-22_07-30-00_08-00-00_bus.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Subway - Friday',2,'../data/output_2016-01-22_07-30-00_08-00-00_subway.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Bus - Saturday',3,'../data/output_2016-01-23_07-30-00_08-00-00_bus.geojson');
-addLayer(L.mapbox.featureLayer(),false,'Subway - Saturday',4,'../data/output_2016-01-23_07-30-00_08-00-00_subway.geojson');
+map.on('load', function () {
+  map.addSource("friday_bus", {
+    "type": "geojson",
+    "data": "output_2016-01-22_07-30-00_08-00-00_bus.geojson"
+  });
+  map.addSource("friday_subway", {
+    "type": "geojson",
+    "data": "output_2016-01-22_07-30-00_08-00-00_subway.geojson"
+  });
+  map.addSource("saturday_bus", {
+    "type": "geojson",
+    "data": "output_2016-01-23_07-30-00_08-00-00_bus.geojson"
+  });
+  map.addSource("saturday_subway", {
+    "type": "geojson",
+    "data": "output_2016-01-23_07-30-00_08-00-00_subway.geojson"
+  });
+  addLayer(map, true,  'Friday Buses',   'friday_bus');
+  addLayer(map, false, 'Friday Subway',  'friday_subway');
+  addLayer(map, false, 'Saturday Buses', 'saturday_bus');
+  addLayer(map, false, 'Saturday Subway','saturday_subway');
+  
+  // Create a source and layer for the selected line segment
+  map.addSource('selected line', {
+    type: 'geojson',
+    data: selectedData
+  });
+  map.addLayer({
+    id: 'selected line',
+    type: 'line',
+    source: 'selected line',
+    paint: {
+      'line-width': 6,
+      'line-color': '#ff0000',
+      'line-opacity': 1
+    } 
+  });
+});
 
-function startLoading() {
-  loader.className = '';
-}
+function createSource(sourceId, properties) {
+  var sublayerId = sourceId + '_' + properties + '_frequency';
+  subLayersCrossProduct.push(sublayerId);
 
-function finishedLoading() {
-  loader.className = 'hide';
-}
-
-function addLayer(layer, active, name, zIndex, url) {
-  layer.setZIndex(zIndex)
-    .addTo(map);
-
-  var link = document.createElement('a');
-  link.href      = '#';
-  link.className = 'active';
-  link.innerHTML = name;
-
-  if (active) {
-    startLoading();
-    layer.loadURL(url)
-      .on('ready', finishedLoading);
-    map.addLayer(layer);
-    link.className = 'active';
+  if (properties === 'middle') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['all',
+                 ['>=', 'frequency', 4],
+                 ['<=',  'frequency', 8]],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 4,
+        'line-color': '#7FCDBB',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'low') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['<', 'frequency', 4],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 2,
+        'line-color': '#EDF8B1',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'high') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['>', 'frequency', 8],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 6,
+        'line-color': '#2C7FB8',
+        'line-opacity': 0.7
+      }
+    };
   } else {
-    layer.loadURL(url);
-    map.removeLayer(layer);
-    link.className = '';
+    console.log('error');
+  }
+};
+
+function addLayer(map, visible, name, id) {
+  map.addLayer(createSource(id, 'middle'));
+  map.addLayer(createSource(id, 'low'));
+  map.addLayer(createSource(id, 'high'));
+  
+  var link = document.createElement('a');
+  link.href = '#';
+  link.textContent = name;
+  
+  if (visible === true) {
+    link.className = 'active';
+    
+    for (var sublayer_index in sublayers) {
+      var sublayer_id = id + '_' + sublayers[sublayer_index];
+      map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+    }
   }
 
-
-  link.onclick = function(e) {
+  link.onclick = function (e) {
     e.preventDefault();
     e.stopPropagation();
-
-    if (map.hasLayer(layer)) {
-      map.removeLayer(layer);
-      this.className = '';
-    } else {
-      map.addLayer(layer)
-      this.className = 'active';
+    
+    // Set the clicked link as active and the other and inactive
+    $('#menu a').removeClass('active');
+    this.className = 'active';
+    
+    // Iterate over all the layers, turning on only the one that is clicked
+    for (var idIndex in allIds) {
+      for (var sublayerIndex in sublayers) {
+        var sublayerId = allIds[idIndex] + '_' + sublayers[sublayerIndex];
+        if (id === allIds[idIndex]) {
+          map.setLayoutProperty(sublayerId, 'visibility', 'visible');
+        } else {
+          map.setLayoutProperty(sublayerId, 'visibility', 'none');
+        }
+      }
     }
   };
-  layer.on('mouseover', function(e) {
-    e.layer.openPopup();
-  });
-  layer.on('mouseout', function(e) {
-    e.layer.closePopup();
-  });
 
+  var layers = document.getElementById('menu');
   layers.appendChild(link);
 }
+
+var popup = new mapboxgl.Popup({
+  closeButton: false,
+  closeOnClick: false
+});
+
+map.on('mousemove', function(e) {
+  var features = map.queryRenderedFeatures(e.point, { layers: subLayersCrossProduct });
+  // Change the cursor style as a UI indicator.
+  map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+
+  if (!features.length) {
+    popup.remove();
+    if (map.getSource('selected line') !== undefined) { 
+      selectedData.features = [];
+      map.getSource('selected line').setData(selectedData);
+    }
+    feature.properties.title = 'dummy';
+    return;
+  }
+
+  // Highlight the selected line segment
+  if (features[0] !== feature) {
+    feature = features[0];
+    selectedData.features = [];
+    selectedData.features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+            [ feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1] ],
+            [ feature.geometry.coordinates[1][0], feature.geometry.coordinates[1][1] ]
+          ]
+      }
+    });
+    map.getSource('selected line').setData(selectedData);
+  }
+
+  // Pop-ulate the pop-up and set its coordinates on the middle of the line feature
+  var lon = (feature.geometry.coordinates[0][0] + feature.geometry.coordinates[1][0]) / 2;
+  var lat = (feature.geometry.coordinates[0][1] + feature.geometry.coordinates[1][1]) / 2;
+  
+  var template = $('#template').html();
+  var templateData = {
+    frequency: feature.properties.description,
+    title: feature.properties.title,
+    origin: feature.properties.origin_onestop_id,
+    dest: feature.properties.destination_onestop_id
+  };
+  Mustache.parse(template);   // optional, speeds up future uses
+  var rendered = Mustache.render(template, templateData);
+  popup.setLngLat([lon, lat])
+    .setHTML(rendered)
+    .addTo(map);
+});
 </script>
+<script id="template" type="x-tmpl-mustache">
+<b>{{ title }}</b><br />
+{{ frequency }}
+</script>
+<script src="bower_components/mustache.js/mustache.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
 <!-- Google Analytics -->
 <script>
