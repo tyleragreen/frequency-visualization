@@ -134,6 +134,18 @@ var latitude   = 40.72;
 var longitude  = -74.0;
 var zoom_level = 10;
 
+// Create a dummy 'selected' feature to make initial comparisons work
+var feature = {
+  properties: {
+    title: 'dummy'
+  }
+};
+// Create a GeoJSON object to hold the edge that is hovered over
+var selectedData = {
+  type: 'FeatureCollection',
+  features: []
+};
+
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
 var map = new mapboxgl.Map({
     container: 'map',
@@ -141,7 +153,8 @@ var map = new mapboxgl.Map({
     center: [longitude, latitude],
     zoom: zoom_level
 });
-  
+
+var allIds = ['friday_bus','friday_subway','saturday_bus','saturday_subway'];
 var sublayers = ['high_frequency','low_frequency','middle_frequency'];
 var subLayersCrossProduct = [];
 
@@ -166,6 +179,22 @@ map.on('load', function () {
   addLayer(map, false, 'Friday Subway',  'friday_subway');
   addLayer(map, false, 'Saturday Buses', 'saturday_bus');
   addLayer(map, false, 'Saturday Subway','saturday_subway');
+  
+  // Create a source and layer for the selected line segment
+  map.addSource('selected line', {
+    type: 'geojson',
+    data: selectedData
+  });
+  map.addLayer({
+    id: 'selected line',
+    type: 'line',
+    source: 'selected line',
+    paint: {
+      'line-width': 6,
+      'line-color': '#ff0000',
+      'line-opacity': 1
+    } 
+  });
 });
 
 function createSource(sourceId, properties) {
@@ -186,7 +215,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 4,
         'line-color': '#7FCDBB',
-        'line-opacity': 0.2
+        'line-opacity': 0.7
       }
     };
   } else if (properties === 'low') {
@@ -201,7 +230,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 2,
         'line-color': '#EDF8B1',
-        'line-opacity': 0.2
+        'line-opacity': 0.7
       }
     };
   } else if (properties === 'high') {
@@ -216,7 +245,7 @@ function createSource(sourceId, properties) {
       'paint': {
         'line-width': 6,
         'line-color': '#2C7FB8',
-        'line-opacity': 0.2
+        'line-opacity': 0.7
       }
     };
   } else {
@@ -245,17 +274,20 @@ function addLayer(map, visible, name, id) {
   link.onclick = function (e) {
     e.preventDefault();
     e.stopPropagation();
-
-    for (var sublayer_index in sublayers) {
-      var sublayer_id = id + '_' + sublayers[sublayer_index];
-      var visibility = map.getLayoutProperty(sublayer_id, 'visibility');
-  
-      if (visibility === 'visible') {
-        map.setLayoutProperty(sublayer_id, 'visibility', 'none');
-        this.className = '';
-      } else {
-        this.className = 'active';
-        map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+    
+    // Set the clicked link as active and the other and inactive
+    $('#menu a').removeClass('active');
+    this.className = 'active';
+    
+    // Iterate over all the layers, turning on only the one that is clicked
+    for (var idIndex in allIds) {
+      for (var sublayerIndex in sublayers) {
+        var sublayerId = allIds[idIndex] + '_' + sublayers[sublayerIndex];
+        if (id === allIds[idIndex]) {
+          map.setLayoutProperty(sublayerId, 'visibility', 'visible');
+        } else {
+          map.setLayoutProperty(sublayerId, 'visibility', 'none');
+        }
       }
     }
   };
@@ -265,8 +297,8 @@ function addLayer(map, visible, name, id) {
 }
 
 var popup = new mapboxgl.Popup({
-    closeButton: false,
-    closeOnClick: false
+  closeButton: false,
+  closeOnClick: false
 });
 
 map.on('mousemove', function(e) {
@@ -276,13 +308,32 @@ map.on('mousemove', function(e) {
 
   if (!features.length) {
     popup.remove();
+    if (map.getSource('selected line') !== undefined) { 
+      selectedData.features = [];
+      map.getSource('selected line').setData(selectedData);
+    }
+    feature.properties.title = 'dummy';
     return;
   }
 
-  var feature = features[0];
-  //map.setPaintProperty(feature.layer.id,'line-opacity',1);
+  // Highlight the selected line segment
+  if (features[0] !== feature) {
+    feature = features[0];
+    selectedData.features = [];
+    selectedData.features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+            [ feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1] ],
+            [ feature.geometry.coordinates[1][0], feature.geometry.coordinates[1][1] ]
+          ]
+      }
+    });
+    map.getSource('selected line').setData(selectedData);
+  }
 
-  // Populate the popup and set its coordinates on the middle of the line feature
+  // Pop-ulate the pop-up and set its coordinates on the middle of the line feature
   var lon = (feature.geometry.coordinates[0][0] + feature.geometry.coordinates[1][0]) / 2;
   var lat = (feature.geometry.coordinates[0][1] + feature.geometry.coordinates[1][1]) / 2;
   popup.setLngLat([lon, lat])
@@ -290,6 +341,7 @@ map.on('mousemove', function(e) {
     .addTo(map);
 });
 </script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
 <!-- Google Analytics -->
 <script>
