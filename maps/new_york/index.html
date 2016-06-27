@@ -57,17 +57,9 @@
           padding: 5px;
           font-weight: bold;
           text-decoration: none;
-          /*border-bottom: 1px solid rgba(0,0,0,0.25);*/
           text-align: center;
           border-radius: 5px;
           }
-          /*#menu a:first-child {
-            border-radius: 3px 3px 0 0;
-            }
-          #menu a:last-child {
-            border: none;
-            border-radius: 0 0 3px 3px;
-            }*/
           #menu a:hover {
             background: #f4f4f4;
             color: #404040;
@@ -81,6 +73,19 @@
               }
       /* End MAP TOGGLES */
   
+      #warning {
+        background: #fff;
+        width: 200px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      #warning a {
+        color: #3074a4;
+      }
+      
       /* LEGEND */
       #legend {
         background: #fff;
@@ -109,11 +114,27 @@
         font-size: 9px;
        }
       /* End MAP LEGEND */
+      
+      
+      @media (max-width: 768px) {
+        #legend {
+          display: none;
+        }
+        #menu {
+          display: none;
+        }
+      }
+      @media (min-width: 768px) {
+        #warning {
+          display: none;
+        }
+      }
     </style>
   </head>
 <body>
 <div id='map'></div>
 <nav id='menu'></nav>
+<div id='warning'><p>This map is best viewed on a desktop browser. Thanks!</p><p>-<a href="http://www.tyleragreen.com/">Tyler</a></p></div>
 
 <div id='legend'>
   <p><strong>Transit Trips / Hour</strong></p>
