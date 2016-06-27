@@ -167,19 +167,19 @@ var subLayersCrossProduct = [];
 map.on('load', function () {
   map.addSource("friday_bus", {
     "type": "geojson",
-    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_bus.geojson"
+    "data": "output_2016-01-22_07-30-00_08-00-00_bus.geojson"
   });
   map.addSource("friday_subway", {
     "type": "geojson",
-    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-22_07-30-00_08-00-00_subway.geojson"
+    "data": "output_2016-01-22_07-30-00_08-00-00_subway.geojson"
   });
   map.addSource("saturday_bus", {
     "type": "geojson",
-    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-23_07-30-00_08-00-00_bus.geojson"
+    "data": "output_2016-01-23_07-30-00_08-00-00_bus.geojson"
   });
   map.addSource("saturday_subway", {
     "type": "geojson",
-    "data": "https://preview.c9users.io/tgreen8091/in-transit/frequency-visualization/maps/data/output_2016-01-23_07-30-00_08-00-00_subway.geojson"
+    "data": "output_2016-01-23_07-30-00_08-00-00_subway.geojson"
   });
   addLayer(map, true,  'Friday Buses',   'friday_bus');
   addLayer(map, false, 'Friday Subway',  'friday_subway');
