@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="resource-type" content="document" />
+    <meta http-equiv="content-type" content="text/html; charset=US-ASCII" />
+    <meta http-equiv="content-language" content="en-us" />
+    <meta name="author" content="Tyler A. Green">
+    <meta name="contact" content="greent@tyleragreen.com" />
+    <meta name="copyright" content="Copyright (c)2016 Tyler A. Green. All Rights Reserved." />
+    <meta name="description" content="New York City subway and bus frequency can be visualized with frequency-weighted lines. The map is powered by Transitland and Mapbox and is a project of public transit enthusiast Tyler A. Green." />
+    <meta name="keywords" content="tyler a green, transit, public transit, transportation, cities, urban, buses, subways, light rail, blog, colorado" />
+    <link rel="icon" href="../favicon.ico">
+
+    <title>New York City Transit Frequency Visualization</title>
+
+    <!-- Mapbox Includes -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet' />
+  
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+  
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+  
+      /* MAP TOGGLES */
+      #menu {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index:1;
+        border-radius: 6px;
+        width: 140px;
+        }
+        #menu a {
+          border: 3px solid white;
+          font-size: 14px;
+          background: #fff;
+          color: #404040;
+          display: block;
+          margin-bottom: 10px;
+          padding: 5px;
+          font-weight: bold;
+          text-decoration: none;
+          /*border-bottom: 1px solid rgba(0,0,0,0.25);*/
+          text-align: center;
+          border-radius: 5px;
+          }
+          /*#menu a:first-child {
+            border-radius: 3px 3px 0 0;
+            }
+          #menu a:last-child {
+            border: none;
+            border-radius: 0 0 3px 3px;
+            }*/
+          #menu a:hover {
+            background: #f4f4f4;
+            color: #404040;
+            }
+          #menu a.active {
+            background: #3887BE;
+            color: #FFF;
+            }
+            #menu a.active:hover {
+              background: #3074a4;
+              }
+      /* End MAP TOGGLES */
+  
+      /* LEGEND */
+      #legend {
+        background: #fff;
+        position: absolute;
+        bottom: 25px;
+        right: 5px;
+        width: 300px;
+        padding: 0px 15px;
+        z-index: 1;
+        border-radius: 8px;
+      }
+      #legend a {
+        color: #3074a4;
+        text-decoration: underline;
+      }
+      #legend a:hover {
+        text-decoration: none;
+      }
+      #legend label,
+      #legend span {
+        display: block;
+        float: left;
+        height: 15px;
+        width: 20%;
+        text-align: center;
+        font-size: 9px;
+       }
+      /* End MAP LEGEND */
+    </style>
+  </head>
+<body>
+<div id='map'></div>
+<nav id='menu'></nav>
+
+<div id='legend'>
+  <p><strong>Transit Trips / Hour</strong></p>
+  <nav class='clearfix'>
+    <span style='background:#ffffff;'></span>
+    <span style='background:#EDF8B1;'></span>
+    <span style='background:#7FCDBB;'></span>
+    <span style='background:#2C7FB8;'></span>
+    <span style='background:#ffffff;'></span>
+    <label></label>
+    <label>&lt; 4</label>
+    <label>4 - 8</label>
+    <label>&gt; 8</label>
+    <label></label>
+  </nav>
+  <div><small>
+    <p>Created by <a href="http://www.tyleragreen.com/">Tyler A. Green</a> using <a href="https://transit.land/" target="_blank">Transitland</a> and <a href="https://www.mapbox.com/" target="_blank">Mapbox</a>.</p>
+    <p>View <a href="https://github.com/tyleragreen/frequency-visualization" target="_blank">the code on GitHub</a> and <a href="http://www.tyleragreen.com/blog/2016/02/new-york-city-transit-frequency-visualization" target="_blank">full explanation</a>.</p>
+  </small></div>
+</div>
+
+<script>
+var latitude   = 40.72;
+var longitude  = -74.0;
+var zoom_level = 10;
+// Create a dummy 'selected' feature to make initial comparisons work
+var feature = {
+  properties: {
+    title: 'dummy'
+  }
+};
+// Create a GeoJSON object to hold the edge that is hovered over
+var selectedData = {
+  type: 'FeatureCollection',
+  features: []
+};
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZW50IiwiYSI6ImNpazBqdWFsOTM5Nnh2M2x6dWZ2dnB3aHkifQ.97-pFPD8lQf02B6edag1rA';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v9',
+    center: [longitude, latitude],
+    zoom: zoom_level
+});
+var allIds = ['friday_bus','friday_subway','saturday_bus','saturday_subway'];
+var sublayers = ['high_frequency','low_frequency','middle_frequency'];
+var subLayersCrossProduct = [];
+map.on('load', function () {
+  map.addSource("friday_bus", {
+    "type": "geojson",
+    "data": "output_2016-01-22_07-30-00_08-00-00_bus.geojson"
+  });
+  map.addSource("friday_subway", {
+    "type": "geojson",
+    "data": "output_2016-01-22_07-30-00_08-00-00_subway.geojson"
+  });
+  map.addSource("saturday_bus", {
+    "type": "geojson",
+    "data": "output_2016-01-23_07-30-00_08-00-00_bus.geojson"
+  });
+  map.addSource("saturday_subway", {
+    "type": "geojson",
+    "data": "output_2016-01-23_07-30-00_08-00-00_subway.geojson"
+  });
+  addLayer(map, true,  'Friday Buses',   'friday_bus');
+  addLayer(map, false, 'Friday Subway',  'friday_subway');
+  addLayer(map, false, 'Saturday Buses', 'saturday_bus');
+  addLayer(map, false, 'Saturday Subway','saturday_subway');
+  
+  // Create a source and layer for the selected line segment
+  map.addSource('selected line', {
+    type: 'geojson',
+    data: selectedData
+  });
+  map.addLayer({
+    id: 'selected line',
+    type: 'line',
+    source: 'selected line',
+    paint: {
+      'line-width': 6,
+      'line-color': '#ff0000',
+      'line-opacity': 1
+    } 
+  });
+});
+function createSource(sourceId, properties) {
+  var sublayerId = sourceId + '_' + properties + '_frequency';
+  subLayersCrossProduct.push(sublayerId);
+  if (properties === 'middle') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['all',
+                 ['>=', 'frequency', 4],
+                 ['<=',  'frequency', 8]],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 4,
+        'line-color': '#7FCDBB',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'low') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['<', 'frequency', 4],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 2,
+        'line-color': '#EDF8B1',
+        'line-opacity': 0.7
+      }
+    };
+  } else if (properties === 'high') {
+    return {
+      'id': sublayerId,
+      'type': 'line',
+      'source': sourceId,
+      'filter': ['>', 'frequency', 8],
+      'layout': {
+        'visibility': 'none'
+      },
+      'paint': {
+        'line-width': 6,
+        'line-color': '#2C7FB8',
+        'line-opacity': 0.7
+      }
+    };
+  } else {
+    console.log('error');
+  }
+};
+function addLayer(map, visible, name, id) {
+  map.addLayer(createSource(id, 'middle'));
+  map.addLayer(createSource(id, 'low'));
+  map.addLayer(createSource(id, 'high'));
+  
+  var link = document.createElement('a');
+  link.href = '#';
+  link.textContent = name;
+  
+  if (visible === true) {
+    link.className = 'active';
+    
+    for (var sublayer_index in sublayers) {
+      var sublayer_id = id + '_' + sublayers[sublayer_index];
+      map.setLayoutProperty(sublayer_id, 'visibility', 'visible');
+    }
+  }
+  link.onclick = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Set the clicked link as active and the other and inactive
+    $('#menu a').removeClass('active');
+    this.className = 'active';
+    
+    // Iterate over all the layers, turning on only the one that is clicked
+    for (var idIndex in allIds) {
+      for (var sublayerIndex in sublayers) {
+        var sublayerId = allIds[idIndex] + '_' + sublayers[sublayerIndex];
+        if (id === allIds[idIndex]) {
+          map.setLayoutProperty(sublayerId, 'visibility', 'visible');
+        } else {
+          map.setLayoutProperty(sublayerId, 'visibility', 'none');
+        }
+      }
+    }
+  };
+  var layers = document.getElementById('menu');
+  layers.appendChild(link);
+}
+var popup = new mapboxgl.Popup({
+  closeButton: false,
+  closeOnClick: false
+});
+map.on('mousemove', function(e) {
+  var features = map.queryRenderedFeatures(e.point, { layers: subLayersCrossProduct });
+  // Change the cursor style as a UI indicator.
+  map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+  if (!features.length) {
+    popup.remove();
+    if (map.getSource('selected line') !== undefined) { 
+      selectedData.features = [];
+      map.getSource('selected line').setData(selectedData);
+    }
+    feature.properties.title = 'dummy';
+    return;
+  }
+  // Highlight the selected line segment
+  if (features[0] !== feature) {
+    feature = features[0];
+    selectedData.features = [];
+    selectedData.features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+            [ feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1] ],
+            [ feature.geometry.coordinates[1][0], feature.geometry.coordinates[1][1] ]
+          ]
+      }
+    });
+    map.getSource('selected line').setData(selectedData);
+  }
+  // Pop-ulate the pop-up and set its coordinates on the middle of the line feature
+  var lon = (feature.geometry.coordinates[0][0] + feature.geometry.coordinates[1][0]) / 2;
+  var lat = (feature.geometry.coordinates[0][1] + feature.geometry.coordinates[1][1]) / 2;
+  
+  var template = $('#template').html();
+  var templateData = {
+    frequency: feature.properties.description,
+    title: feature.properties.title,
+    origin: feature.properties.origin_onestop_id,
+    dest: feature.properties.destination_onestop_id
+  };
+  Mustache.parse(template);   // optional, speeds up future uses
+  var rendered = Mustache.render(template, templateData);
+  popup.setLngLat([lon, lat])
+    .setHTML(rendered)
+    .addTo(map);
+});
+</script>
+<script id="template" type="x-tmpl-mustache">
+<b>{{ title }}</b><br />
+{{ frequency }}
+</script>
+<script src="bower_components/mustache.js/mustache.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-70458844-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
