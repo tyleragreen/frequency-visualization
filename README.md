@@ -19,6 +19,3 @@ The TransitlandAPIReader uses a local caching mechanism to store the JSON result
 - The TransitlandAPIReader class could be generalized into a gem with a decent test suite, similar to one [Transitland used to maintain](https://github.com/transitland/transitland-ruby-client).
 - The run.rb script could take a job spec input to produce GeoJSON files for multiple days and cities in a single run.
 - The Mapbox front-end could be used to visualize any arbitrary transit system’s GTFS shape data. This would likely be done using a live Ruby on Rails back-end, rather than the offline Ruby script I am currently using.
-
-## Issues
-Please contact Tyler at [greent@tyleragreen.com](mailto:greent@tyleragreen.com) or file a GitHub Issue with any ideas or suggestions.
